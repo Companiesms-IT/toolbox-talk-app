@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Exception;
+
+class CmsDeskApiService
+{
+
+    protected $baseUrl;
+
+    public function __construct()
+    {
+        $this->baseUrl = 'https://dash.cmsdesk.com/api';
+    }
+
+    public function getUserLogin($email, $password)
+    {
+        $data = [
+            'email' => $email,
+            'password' => $password,
+        ];
+        try {
+            $response = Http::post("{$this->baseUrl}/user/login", $data);
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return null;
+        } catch (Exception $e) {
+            Log::error('Error during user login', [
+                'email' => $email,
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    public function getCmsUsers()
+    {
+        try {
+            $response = Http::get("{$this->baseUrl}/dev-hub/users");
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return null;
+        } catch (Exception $e) {
+            Log::error('Error while fetching CMS users', [
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+    public function getCmsUserRoles()
+    {
+        try {
+            $response = Http::get("{$this->baseUrl}/dev-hub/roles");
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return null;
+        } catch (Exception $e) {
+            Log::error('Error while fetching CMS user roles', [
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+    public function getCmsUserDepartments()
+    {
+        try {
+            $response = Http::get("{$this->baseUrl}/dev-hub/departments");
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return null;
+        } catch (Exception $e) {
+            Log::error('Error while fetching CMS user departments', [
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+}

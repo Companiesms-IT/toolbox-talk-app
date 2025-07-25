@@ -1,0 +1,39 @@
+<VirtualHost *:443>
+    SSLEngine on
+    SSLProtocol -all +TLSv1.2
+    DocumentRoot /home/companymanagement/frontend
+    ServerName companymanagementsystems-front-qa.chetu.com
+    DirectoryIndex index.html
+    ErrorLog logs/evergreensolutions_error_log
+    CustomLog logs/evergreensolutions_log common
+    SSLCertificateFile /etc/httpd/ssl/private/star-chetu_com.crt
+    SSLCertificateKeyFile /etc/httpd/ssl/private/star-chetu.key
+    SSLCertificateChainFile /etc/httpd/ssl/private/star-chetu_Bundle.ca-bundle.crt
+</VirtualHost>
+
+<Directory "/home/companymanagement/frontend">
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+
+<VirtualHost *:443>
+    SSLEngine on
+    SSLProtocol -all +TLSv1.2
+    DocumentRoot /home/companymanagement/backend/public
+    ServerName companymanagementsystems-back-qa.chetu.com
+    DirectoryIndex index.html
+    ErrorLog logs/evergreensolutions_error_log
+    CustomLog logs/evergreensolutions_log common
+    SSLCertificateFile /etc/httpd/ssl/private/star-chetu_com.crt
+    SSLCertificateKeyFile /etc/httpd/ssl/private/star-chetu.key
+    SSLCertificateChainFile /etc/httpd/ssl/private/star-chetu_Bundle.ca-bundle.crt
+</VirtualHost>
+
+<Directory "/home/companymanagement/backend/public">
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+

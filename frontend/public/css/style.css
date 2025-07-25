@@ -1,0 +1,828 @@
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Black.woff2') format('woff2'),
+        url('../fonts/Inter-Black.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Bold.woff2') format('woff2'),
+        url('../fonts/Inter-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-ExtraBold.woff2') format('woff2'),
+        url('../fonts/Inter-ExtraBold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-ExtraLight.woff2') format('woff2'),
+        url('../fonts/Inter-ExtraLight.woff') format('woff');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Light.woff2') format('woff2'),
+        url('../fonts/Inter-Light.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Medium.woff2') format('woff2'),
+        url('../fonts/Inter-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Thin.woff2') format('woff2'),
+        url('../fonts/Inter-Thin.woff') format('woff');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Regular.woff2') format('woff2'),
+        url('../fonts/Inter-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-SemiBold.woff2') format('woff2'),
+        url('../fonts/Inter-SemiBold.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+
+
+
+:root {
+    --indigo20: #E0E0FC;
+    --indigo60: #9597F5;
+    --indigo: #6366F1;
+    --subheading: #323232;
+    --blue100: #0D99FF;
+    --mainbody: #666666;
+    --lightthemeh05: #E2E2E3;
+    --themeh05: #CCCCCD;
+    --themeh10: #D7D7D8;
+    --themeh20: #B5B5B6;
+    --themeh30: #8F8F8F;
+    --themeh40: #878788;
+    --grey10: #CECED0;
+    --grey30: #E2E2E2;
+    --grey50: #BDBDBD;
+    --grey100: #808080;
+    --base: #FAFAFA;
+    --white: #ffffff;
+    --black: #000000;
+    --dangerColor: #db0303;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    font-family: 'Poppins';
+}
+
+
+/*My Toolbox Talks Page Css Start Here*/
+.header_Sec {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 15px;
+    background-color: var(--white);
+    z-index: 9;
+}
+
+
+.header_Sec .island_IconBox {
+    background-color: var(--grey30);
+}
+
+.header_Sec .island_IconBox a {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    background-color: var(--base);
+    border-radius: 50%;
+    padding: 7px;
+}
+
+.header_Sec .island_IconBox {
+    background-color: var(--grey30);
+    padding: 7px;
+    border-radius: 30px;
+}
+
+
+/*Aside Css*/
+aside.sidebarmenu {
+    width: 60px;
+    background: var(--indigo20);
+    height: calc(100vh - 113px);
+    position: fixed;
+    top: 93px;
+    bottom: 0px;
+    left: 15px;
+    border-radius: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    flex-direction: column;
+    padding: 10px 10px;
+}
+
+.sidebarmenu .topmenubox ul.navbar {
+    list-style: none;
+    margin: 0;
+    display: block;
+    padding: 0px;
+    text-align: center;
+}
+
+.sidebarmenu .topmenubox ul.navbar li {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.sidebarmenu .topmenubox ul.navbar li a,
+.bottommenubox a {
+    display: flex;
+    text-align: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50px;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebarmenu .topmenubox ul.navbar li a:hover,
+.sidebarmenu .topmenubox ul.navbar li .activenavlink,
+.bottommenubox a:hover {
+    background: var(--indigo);
+}
+
+.sidebarmenu .topmenubox ul.navbar li a:hover svg,
+.sidebarmenu .topmenubox ul.navbar li a:hover svg path,
+.bottommenubox a:hover svg,
+.bottommenubox a:hover svg path {
+    fill: var(--base) !important;
+    stroke: var(--base) !important;
+    fill-opacity: 1;
+}
+
+.sidebarmenu .topmenubox ul.navbar li a.activenavlink svg,
+.sidebarmenu .topmenubox ul.navbar li a.activenavlink svg path {
+    fill: var(--base) !important;
+    stroke: var(--base) !important;
+    fill-opacity: 1;
+}
+
+
+/*Dashboard Body Css*/
+.dashboardbody {
+    padding: 15px 15px;
+    margin-left: 75px;
+}
+
+.sectionHeading h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--subheading);
+    margin-bottom: 0px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 10px;
+    font-family: inter, sans-serif;
+}
+
+.sectionHeading h3 span {
+    font-size: 12px;
+    font-weight: 400;
+    background-color: var(--grey10);
+    color: var(--grey100);
+    padding: 3px 7px;
+    border-radius: 5px;
+}
+
+.filterBox {
+    background-color: var(--themeh10);
+    border-radius: 10px 10px 0 0;
+}
+
+.tabSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.tabSection .tabgroupBox {
+    display: inline-flex;
+    gap: 5px;
+    background-color: #F2F4F5;
+    padding: 5px;
+    border-radius: 10px;
+
+}
+
+.tabSection .tabgroupBox .cstmTabBtn {
+    border: none;
+    padding: 8px 15px;
+    background-color: transparent;
+    border-radius: 7px;
+    color: var(--themeh30);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tabSection .tabgroupBox .cstmTabBtn:hover,
+.tabSection .tabgroupBox .cstmTabBtn.activeTab {
+   background-color: var(--white);
+    /* color: var(--mainbody); */
+    color: black;
+    /* font-weight: bold; */
+}
+
+.cstmprimaybtn {
+    background-color: var(--indigo);
+    padding: 9px 20px;
+    border: none;
+    color: var(--white);
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.filterBox .filterFormBox {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+}
+
+.cstmFilterInputbox input {
+    background-color: var(--themeh05);
+    border: none;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--themeh30);
+}
+
+.cstmFilterInputbox input:focus {
+    background-color: var(--themeh05);
+    box-shadow: unset;
+    border-color: transparent;
+}
+
+.cstmFilterSearchbox i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    color: var(--themeh40);
+}
+
+.cstmFilterSearchbox input {
+    padding-left: 30px;
+}
+
+.cstmblueBtn {
+    background: var(--blue100);
+}
+
+/*Table Css*/
+.tableWrapperBox .cstmScrollabeTableBox {
+    height: calc(100vh - 380px); 
+    max-height: calc(100vh - 380px);
+    min-height: 300px;
+}
+
+.tableWrapperBox table tr th {
+    font-size: 14px;
+    font-weight: 400;
+    background: var(--lightthemeh05);
+    color: #878788;
+    padding: 10px;
+}
+
+.tableWrapperBox table tr td {
+    padding: 10px;
+    vertical-align: middle;
+}
+
+.tableWrapperBox table tr td p {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--subheading);
+}
+
+.tableWrapperBox table tr td span {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--mainbody);
+}
+
+.tableWrapperBox table tr td .StatusSuccess {
+    background-color: #E3F2EA;
+    color: #14AE5C;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.tableWrapperBox table tr td .StatusOngoing {
+    background-color: #FBF2E5;
+    color: #FFA629;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+/*Table Pagination Css*/
+.cstmTablePagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: var(--lightthemeh05);
+    border-radius: 0px 0px 10px 10px;
+}
+
+.cstmTablePagination button.previoustableBtn {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--mainbody);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.cstmTablePagination button.previoustableBtn i {
+    width: 35px;
+    height: 35px;
+    background: var(--grey10);
+    color: var(--mainbody);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border-radius: 10px;
+}
+
+.cstmTablePagination button.nexttableBtn {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--mainbody);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.cstmTablePagination button.nexttableBtn i {
+    width: 35px;
+    height: 35px;
+    background: var(--grey10);
+    color: var(--mainbody);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border-radius: 10px;
+}
+
+.cstmTablePagination ul.tablePaginationlist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cstmTablePagination ul.tablePaginationlist li a,
+.cstmTablePagination ul.tablePaginationlist li span {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--mainbody);
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+
+.cstmTablePagination ul.tablePaginationlist li a:hover,
+.cstmTablePagination ul.tablePaginationlist li .activepagination {
+    background-color: var(--themeh20);
+    color: var(--subheading);
+}
+
+/*My Toolbox Talks Page Css End Here*/
+
+
+/*Created Toolbox Page Css Start Here*/
+.cstmFormRow {
+    border-bottom: 1px solid var(--themeh10);
+    align-items: center;
+}
+
+.cstmInputBox label,
+.cstmformcheck label {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--themeh40);
+    margin: 0;
+}
+
+.cstmInputBox input,
+.cstmInputBox select,
+.cstmInputBox textarea {
+    padding: 7px 10px;
+    border: none;
+    background-color: #EDEDED;
+    color: var(--themeh30);
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 3px;
+}
+
+.cstmInputBox input:focus,
+.cstmInputBox select:focus,
+.cstmInputBox textarea:focus {
+    background-color: #EDEDED;
+    box-shadow: unset;
+}
+
+.cstmFormLinkBTN {
+    padding: 7px 10px;
+    border: none;
+    background-color: var(--grey50);
+    color: var(--subheading);
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 3px;
+    min-width: 130px;
+}
+
+.footerBtnbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.footerBtnbox .cstmprimaryBTN {
+    background-color: var(--blue100);
+    color: var(--white);
+}
+
+
+@media (min-width: 2560px) {
+    .dashboardbody {
+        height: 92vh;
+        display: flex;
+
+        flex-direction: column;
+        gap: 80px;
+    }
+
+    .footerBtnbox {
+        padding-top: 320px;
+    }
+
+ }
+
+
+/*Update and Attachments Page Css Start Here*/
+.updateCardwrapper {
+    background-color: var(--grey10);
+    height: calc(100vh - 120px);
+    border-radius: 30px;
+    padding: 15px;
+}
+
+.whitecardbox {
+    background-color: var(--white);
+    padding: 15px;
+    border-radius: 15px;
+    height: 100%;
+}
+
+.iconBTN {
+    background-color: transparent;
+    color: var(--grey80);
+    font-size: 18px;
+}
+
+.whitecardbox .updateToolboxcontentSec h2 {
+    margin: 30px 0px 0px;
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--black);
+}
+
+.whitecardbox .updateToolboxcontentSec p {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--subheading);
+    margin: 10px 0px;
+    text-align: center;
+}
+
+.whitecardbox .updateToolboxcontentSec .dateText {
+    display: block;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--subheading);
+    text-align: center;
+}
+
+.whitecardbox .updateToolboxcontentSec .assignedtext {
+    font-size: 14px;
+    font-weight: 400;
+    color: #14AE5C;
+    background-color: #E3F2EA;
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.whitecardbox .updateDescriptionbox {
+    background-color: #F4F4F4;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.whitecardbox .updateDescriptionbox h4 {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--mainbody);
+    margin-bottom: 15px;
+}
+
+.whitecardbox .updateDescriptionbox p {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--subheading);
+    line-height: 20px;
+    margin-bottom: 0px;
+}
+
+.sectionheadingbox h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--subheading);
+    margin: 0px;
+}
+
+
+.cstmCardHeading h6 {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--subheading);
+    background-color: #F2F2F2;
+    padding: 15px;
+    border-radius: 10px 10px 0px 0px;
+    margin: 0;
+}
+
+.cstmCardHeading h6 .headingBadge {
+    font-size: 12px;
+    font-weight: 400;
+    background-color: #E7E7E7;
+    color: var(--grey100);
+    padding: 3px 7px;
+    border-radius: 5px;
+}
+
+.cornerRadiusTablebox table tr th:first-child {
+    border-radius: 10px 0px 0px 0px;
+}
+
+.cornerRadiusTablebox table tr th:last-child {
+    border-radius: 0px 10px 0px 0px;
+}
+
+.cstmRowminHeight {
+    min-height: 100%;
+}
+
+/*Update and Attachments Page Css End Here*/
+
+/*Toolbox template Page Css Start Here*/
+.r-side {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.r-side i {
+    color: #00000066;
+    width: 13px;
+    height: 17px;
+}
+
+.del-all-btn {
+    border-radius: 4px;
+    border: 1px solid #F16B41;
+    background: #F16B41;
+    color: white;
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+.toolTempInputbox input {
+    background-color: var(--themeh05);
+    border: none;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    width: 358px;
+    padding-left: 30px;
+    max-width: 100%;
+    color: var(--themeh30);
+}
+
+.sortby-filter select {
+    border: none;
+    background-color: #cccccd;
+    color: var(--themeh30);
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 3px;
+}
+
+.sortby-filter {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sortby-filter span {
+    font-size: 14px;
+    color: #00000080;
+    white-space: nowrap;
+}
+
+.l-side {
+    display: flex;
+    gap: 20px;
+}
+
+.toolbox-template-sec {
+    padding: 30px 30px;
+    height: calc(100vh - 300px);
+    overflow: auto;
+    background-color: #F2F2F2;
+}
+
+.template-card {
+    align-content: center;
+    text-align: center;
+    width: 195.55px;
+    padding: 0 12px;
+    margin-bottom: 30px;
+}
+
+.template-name {
+    margin-top: 5px;
+}
+
+.template-name h5 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.template-name span {
+    font-size: 12px;
+    color: #00000082;
+}
+
+.template-item {
+    position: relative;
+}
+
+.template-checkbox {
+    position: absolute;
+    left: 0;
+}
+
+.preview-sec {
+    height: calc(100vh - 179px);
+    background: #F2F2F2;
+    border-radius: 0px 0px 12px 12px;
+    padding: 20px;
+}
+
+.description-head {
+    background: #D9D9D9;
+    border-radius: 12px 12px 0px 0px;
+    padding: 15px 20px;
+}
+
+.detail-head {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    height: 160px;
+}
+
+.description-box {
+    display: flex;
+    gap: 40px;
+    height: 130px;
+}
+
+.supporting-file {
+    display: flex;
+    gap: 40px;
+    margin-block: 15px;
+}
+
+.question-sheet {
+    display: flex;
+    gap: 40px;
+    margin-block: 15px;
+}
+
+.divider-line {
+    border: 1px solid #dddddd;
+}
+
+.detail-head h2 {
+    font-weight: 600;
+}
+
+.detail-head :nth-child(2) {
+    font-size: 14px;
+    color: #323232;
+}
+
+.detail-head :nth-child(3) {
+    font-size: 12px;
+    color: #8d8d8d;
+}
+
+.template-count {
+    background: #8080801A;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 14px;
+    color: #808080;
+}
+
+.description-head h5 {
+    margin-bottom: 0;
+    font-weight: 600;
+}
+.btnBox.button-container-count button.cstmFormLinkBTN {
+    font-size: 12px;
+}
+/*Toolbox template Page Css End Here*/
