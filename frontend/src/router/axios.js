@@ -2,7 +2,7 @@
 import axios from "axios";
 // Create an instance of Axios
 const axiosInstance = axios.create({
-  baseURL: "https://companymanagementsystems-back-qa.chetu.com/api/v1", // Base URL for your API
+  baseURL: `${import.meta.env.VITE_APP_BASE_URL}/api/v1/`, // Base URL for your API
   headers: {
     "Content-Type": "application/json",
     "Content-Type": "multipart/form-data", // Adjust if needed
