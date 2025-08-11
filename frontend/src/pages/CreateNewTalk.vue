@@ -858,7 +858,7 @@ export default {
     async getDepartments() {
       try {
         const { data } = await axios.get(
-          "https://dash.cmsdesk.com/api/dev-hub/departments",
+          `${import.meta.env.VITE_APP_CMS_BASE_URL}/api/dev-hub/departments`,
           {
             headers: {
               Authorization: `Bearer ${
@@ -877,7 +877,7 @@ export default {
     async getRoles() {
       try {
         const { data } = await axios.get(
-          "https://dash.cmsdesk.com/api/dev-hub/roles",
+          `${import.meta.env.VITE_APP_CMS_BASE_URL}/api/dev-hub/roles`,
           {
             headers: {
               Authorization: `Bearer ${
@@ -896,7 +896,7 @@ export default {
     async getUsers() {
       try {
         const { data } = await axios.get(
-          "https://dash.cmsdesk.com/api/dev-hub/users",
+          `${import.meta.env.VITE_APP_CMS_BASE_URL}/api/dev-hub/users`,
           {
             headers: {
               Authorization: `Bearer ${
@@ -925,7 +925,7 @@ export default {
       );
 
       const { data } = await axios.get(
-        "https://dash.cmsdesk.com/api/dev-hub/users",
+        `${import.meta.env.VITE_APP_CMS_BASE_URL}/api/dev-hub/users`,
         {
           params,
           headers: {
