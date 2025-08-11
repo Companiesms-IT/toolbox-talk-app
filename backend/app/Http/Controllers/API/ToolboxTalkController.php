@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\AcknowledgedStatusRequest;
 use App\Http\Requests\API\AssignedToolboxTalkRequest;
+use App\Http\Requests\API\CheckVideoPdfStatusRequest;
+use App\Http\Requests\API\CheckVideoPdfsFileStatusRequest;
+use App\Http\Requests\API\AttemptQuestionsRequest;
 use Illuminate\Http\Request;
 
 use App\Models\ToolboxTalk;
@@ -28,6 +32,8 @@ use App\Http\Requests\API\UpdateAttachmentRequest;
 use App\Http\Requests\API\DeleteToolboxTalkRequest;
 use App\Http\Requests\API\DeleteUrlAndPdfRequest;
 use App\Http\Requests\API\DeleteUpdateCmsLibraryRequest;
+use App\Http\Requests\API\GetQuestionOptionsRequest;
+use App\Http\Resources\API\GetQuestionOptionsResource;
 use App\Http\Resources\API\ToolBoxDetailsResource;
 use App\Http\Resources\API\GetAuthUserAssignDetailsResource;
 use App\Models\AttemptQuestion;
@@ -37,24 +43,26 @@ use App\Rules\ExistsOrSoftDeletedRequest;
 use App\Http\Resources\API\GetAllAssignedByMeTalksResource;
 use App\Http\Resources\API\GetAllCmsLibraryTalksResource;
 use App\Http\Resources\API\GetAllCreatedByMeTalksResource;
+use App\Http\Resources\API\AttemptQuestionsResource;
 use App\Traits\CommonFunctionalityTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 
 class ToolboxTalkController extends Controller
 {
     use CommonFunctionalityTrait;
-
-    public function createToolboxtalk(CreateToolboxTalkRequest $request)
-    {
+    
+    public function createToolboxtalk(CreateToolboxTalkRequest $request){
         try {
+            $authUserId = Auth::user()->id ?? '4392';
             DB::beginTransaction();
             $user = User::find(1);
             if (!$user->hasPermissionTo('Creator')) {
                 return response()->json([
                     'message' => "You do not have permission to access Create Toolbox Talk feature!",
                 ], 200);
-            }
+            } 
             // if (isset($request->due_date) && !empty($request->due_date)) {
             //     $date = Carbon::createFromFormat('d-m-Y', $request->due_date);
             //     $formattedDate = $date->format('Y-m-d H:i:s');
@@ -64,61 +72,64 @@ class ToolboxTalkController extends Controller
             $toolboxTalk = ToolboxTalk::create([
                 'title' => $request->title,
                 // 'video_url' => $request->resource_url ?  $request->resource_url : '',
-                'user_id' => $user->id,
-                'number_of_questions_to_ask' => $request->attemptQuestions,
-                'number_of_correct_answer_to_pass' => $request->number_of_correct_answer_to_pass,
+                'user_id' => $authUserId,
+                'number_of_questions_to_ask' => isset($request->attemptQuestions) && !empty($request->attemptQuestions) ? $request->attemptQuestions : null,
+                'number_of_correct_answer_to_pass' => isset($request->number_of_correct_answer_to_pass) && !empty($request->number_of_correct_answer_to_pass) ? $request->number_of_correct_answer_to_pass : null,
                 'is_library' => $request->isLibrary,
                 'due_date' => $request->due_date,
                 'description' => $request->description ? $request->description : '',
             ]);
+            
+            $resourceUrl = null;
             $resourceUrlDataWithKey = [];
             $filePath = null;
             $fileData = [];
             $resourceUrlData = [];
+           
             if (!empty($request->resource_url)) {
                 if (strpos($request->resource_url, ',') !== false) {
                     $resourceUrlData = explode(',', $request->resource_url);
-                    if (count($resourceUrlData)  > 0) {
-                        $i = 0;
+                    if(count($resourceUrlData)  > 0){
+                        $i=0;
                         foreach ($resourceUrlData as $url) {
                             $resourceUrlDataWithKey[$i]['video_url'] = $url;
                             $resourceUrlDataWithKey[$i]['toolbox_talk_id'] = $toolboxTalk->id;
                             $i++;
                         }
-                    }
+                    } 
                 } else {
-                    $resourceUrlDataWithKey[0]['video_url'] = $request->resource_url;
-                    $resourceUrlDataWithKey[0]['toolbox_talk_id'] = $toolboxTalk->id;
+                         $resourceUrlDataWithKey[0]['video_url'] = $request->resource_url;
+                         $resourceUrlDataWithKey[0]['toolbox_talk_id'] = $toolboxTalk->id;
                 }
-
-                if ($resourceUrlDataWithKey) {
-
-                    ResourceVideoLink::insert($resourceUrlDataWithKey);
+                
+                if($resourceUrlDataWithKey){
+                        ResourceVideoLink::insert($resourceUrlDataWithKey); 
+                        $toolboxTalk->update(['updated_at' => Carbon::now()]);
                 }
-            }
-            if (!empty($request->pdf_file) && count($request->pdf_file) > 0) {
-                $i = 0;
+            } else if(!empty($request->pdf_file) && count($request->pdf_file) > 0){ 
+                $i=0;
                 foreach ($request->file('pdf_file') as $file) {
-                    $fileName = 'toolbox_talk_' . $toolboxTalk->id . rand(10, 100) . time() . '.pdf';
+                    $fileName = 'toolbox_talk_' . $toolboxTalk->id . rand(10,100) . time() . '.pdf';
                     $filePath = $file->storeAs('toolbox_talks', $fileName, 'public');
-                    $fileData[$i]['file_name'] =  $fileName;
-                    $fileData[$i]['file_path'] = 'storage/' . $filePath;
+                    $fileData[$i]['file_name'] =  $fileName ;
+                    $fileData[$i]['file_path'] = 'storage/'.$filePath;
                     $fileData[$i]['toolbox_talk_id'] = $toolboxTalk->id;
                     $i++;
-                }
-                if (count($fileData) > 0) {
+                } 
+                if(count($fileData) > 0){
                     MediaFile::insert($fileData);
+                    $toolboxTalk->update(['updated_at' => Carbon::now()]);
                 }
             }
-
-            if (isset($request->questions) && !empty($request->questions)) {
+            
+            if(isset($request->questions) && !empty($request->questions) && ($request->questions != null || $request->questions != '')){
                 $questions = json_decode($request->questions, true);
-                if (count($questions) < $request->attemptQuestions) {
+                if(count($questions) < $request->attemptQuestions){
                     return response()->json([
                         'message' => "The number of questios asked must be less than or the same as the amount of questions added!",
                     ], 200);
                 }
-                if ($request->attemptQuestions < $request->numberOfCorrectAnswer) {
+                if($request->attemptQuestions < $request->numberOfCorrectAnswer){
                     return response()->json([
                         'message' => "The number of correct answer to pass must be less than or the same as the amount of ask questios!",
                     ], 200);
@@ -134,17 +145,19 @@ class ToolboxTalkController extends Controller
                     foreach ($questionData['options'] as $index => $optionName) {
                         $question->options()->create([
                             'name' => $optionName,
-                            'correct_answer' => ($index + 1 == $questionData['correctAnswer']) ? '1' : '0',  // Check if it's the correct answer
+                            'correct_answer' => ($index+1 == $questionData['correctAnswer']) ? '1' : '0',  // Check if it's the correct answer
                             'question_id' => $question->id,
                         ]);
                     }
                 }
+                $toolboxTalk->update(['updated_at' => Carbon::now()]);
             }
-
+            
             //new fresh code 
             if ($request->isLibrary == "1") {
-                $toolboxTalk->update(['status' => '0', 'is_created' => '1']);
-            } else if ($request->isLibrary == "2" || $request->isLibrary == "3") {
+                $toolboxTalk->update(['status' => '0', 'is_created' => '1', 'updated_at' => Carbon::now()]);
+            } 
+            else if ($request->isLibrary == "2" || $request->isLibrary == "3") {
                 $selectUserDetail = json_decode($request->select_user_detail);
                 if (!is_array($selectUserDetail)) {
                     return response()->json(['error' => 'Invalid user details format'], 400);
@@ -165,227 +178,19 @@ class ToolboxTalkController extends Controller
                     ];
                 }, $selectUserDetail);
                 AssignToolboxTalk::insert($dataToInsert);
-                $toolboxTalk->update(['status' => '1', 'is_created' => '1']);
+                $toolboxTalk->update(['status' => '1', 'is_created' => '1', 'updated_at' => Carbon::now()]);
             }
-
-            // else if ($request->isLibrary == "2" || $request->isLibrary == "3") {
-            //     if ((isset($request->selectAll) && $request->selectAll == 'true')) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         User::where('id', '!=', "1")->chunk(100, function ($allUsers) use ($toolboxTalk, &$dataToInsert, &$due_date) {
-            //             foreach ($allUsers as $userData) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         });
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectRole) && !empty($request->selectRole)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         // foreach ($departsIdsAsInt as $departmentId) {
-            //         $usersWithDepartment = User::role($departsIdsAsInt)->get();
-            //         foreach ($rolesIdsAsInt as $roleId) {
-            //             $usersWithRoles = $usersWithDepartment->filter(function ($user) use ($roleId) {
-            //                 return $user->hasPermissionTo($roleId);
-            //             });
-            //             foreach ($usersWithRoles as $userData) {
-            //                 $tem[] = $userData->id;
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         // }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectRole) && !empty($request->selectRole))) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $tem = array();
-            //         $usersWithDepartment = User::role($departsIdsAsInt)->get();
-            //         foreach ($rolesIdsAsInt as $roleId) {
-            //             $usersWithRoles = $usersWithDepartment->filter(function ($user) use ($roleId) {
-            //                 return $user->hasPermissionTo($roleId);
-            //             });
-            //             foreach ($usersWithRoles as $userData) {
-            //                 $tem[] = $userData->id;
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         $usersWithDepartments = User::role($departsIdsAsInt)->get();
-            //         foreach ($usersWithDepartments  as $departs) {
-            //             $tem[] = $departs->id;
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $departs->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if ((isset($request->selectRole) && !empty($request->selectRole)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         $usersWithDepartment = User::permission($rolesIdsAsInt)->get();
-            //         foreach ($usersWithDepartment as $userData) {
-            //             $tem[] = $userData->id;
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $userData->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if (isset($request->selectDept) && !empty($request->selectDept)) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $usersWithDepartments = User::role($departsIdsAsInt)->get();
-            //         foreach ($usersWithDepartments  as $departs) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $departs->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if (isset($request->selectRole) && !empty($request->selectRole)) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $usersWithDepartment = User::permission($rolesIdsAsInt)->get();
-            //         foreach ($usersWithDepartment as $userData) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $userData->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     } else if (isset($request->selectUser) && !empty($request->selectUser)) {
-            //         $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         foreach ($selectedUsers as $suser) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $suser,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         if (!empty($dataToInsert)) {
-            //             AssignToolboxTalk::insert($dataToInsert);
-            //             $toolboxTalk->update(['status' => '1']);
-            //         }
-            //     }
-            //     $toolboxTalk->update(['is_created' => '1']);
-            // }
-            // end code
+            
             DB::commit();
             return response()->json(['msg' => 'Toolbox Talk created successfully', 'data' => $toolboxTalk], 201);
         } catch (Exception $e) {
             DB::rollback();
-            // return $this->getExceptionResponse($e);
             return response()->json(['error' => 'Failed to create Toolbox Talk: ' . $e->getMessage()], 500);
         }
     }
 
     /** Get roles and permissions */
-    public function getRolesPermissions()
-    {
+    public function getRolesPermissions() {
         try {
             $roles = Role::get();
             $permissions = Permission::get();
@@ -393,26 +198,26 @@ class ToolboxTalkController extends Controller
             return response()->json([
                 'roles' => $roles,
                 'permissions' => $permissions,
-                'users' => $users
+                'users' => $users   
             ]);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        catch(Exception $e){
+            return response()->json(['error' => 'Failed to fetch Toolbox Talks: ' . $e->getMessage()], 500);
         }
     }
 
     /** Assign Toolbox Talk */
-    public function assignToolboxTalk(AssignedToolboxTalkRequest $request)
-    {
-        try {
+    public function assignToolboxTalk(AssignedToolboxTalkRequest $request) {
+        try{
             $toolboxTalk = ToolboxTalk::withTrashed()->find($request->toolbox_talk_id);
             if (!$toolboxTalk) {
                 return response()->json(['error' => 'Toolbox Talk not found'], 404);
             }
-            if ($toolboxTalk->status == 1) {
+            if($toolboxTalk->status == 1){
                 return response()->json(['message' => 'Toolbox has already been assigned'], 409);
             }
             DB::beginTransaction();
-            if ((isset($request->selectAll) && $request->selectAll == 'true') || ((isset($request->selectDept) && $request->selectDept == 'true')
+            if ((isset($request->selectAll) && $request->selectAll == 'true') || ((isset($request->selectDept) && $request->selectDept == 'true') 
                 && (isset($request->selectRole) && $request->selectRole == 'true')) || (isset($request->selectUser) && $request->selectUser == 'true')) {
                 $dataToInsert = [];
                 $due_date = $request->due_date ? $request->due_date : null;
@@ -422,8 +227,8 @@ class ToolboxTalkController extends Controller
                             'toolbox_talk_id' => $toolboxTalk->id,
                             'due_date' => $due_date ?? null,
                             'user_id' => $userData->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
+                            'created_at' => now(), 
+                            'updated_at' => now(), 
                         ];
                     }
                 });
@@ -431,7 +236,7 @@ class ToolboxTalkController extends Controller
                     AssignToolboxTalk::insert($dataToInsert);
                     $toolboxTalk->update(['status' => '1']);
                 }
-            } else if ((isset($request->roles) && !empty($request->roles)) && (isset($request->permissions) && !empty($request->permissions))) {
+            }else if ((isset($request->roles) && !empty($request->roles)) && (isset($request->permissions) && !empty($request->permissions))) {
                 $roles = json_decode($request->roles);
                 foreach ($roles as $key => $role) {
                     $roleData = Role::find($role);
@@ -448,7 +253,7 @@ class ToolboxTalkController extends Controller
                                 'toolbox_talk_id' => $toolboxTalk->id,
                                 'due_date' => $request->due_date ? $request->due_date : null,
                                 'user_id' => $filter->id,
-                                'created_at' => now(),
+                                'created_at' => now(), 
                                 'updated_at' => now(),
                             ];
                         }
@@ -458,6 +263,7 @@ class ToolboxTalkController extends Controller
                         }
                     }
                 }
+                
             } else if (isset($request->roles) && !empty($request->roles)) {
                 $roles = json_decode($request->roles);
                 foreach ($roles as $key => $role) {
@@ -471,7 +277,7 @@ class ToolboxTalkController extends Controller
                                 'toolbox_talk_id' => $toolboxTalk->id,
                                 'due_date' => $request->due_date ? $request->due_date : null,
                                 'user_id' => $filter->id,
-                                'created_at' => now(),
+                                'created_at' => now(), 
                                 'updated_at' => now(),
                             ];
                         }
@@ -481,6 +287,7 @@ class ToolboxTalkController extends Controller
                         }
                     }
                 }
+                
             } else if (isset($request->permissions) && !empty($request->permissions)) {
                 $permissions = json_decode($request->permissions);
                 $dataToInsert = [];
@@ -491,12 +298,12 @@ class ToolboxTalkController extends Controller
                         if ($usersWithPermission->isNotEmpty()) {
                             foreach ($usersWithPermission as $filter) {
                                 $dataToInsert[] = [
-                                    'permission_id' => $filter->permissions[0]->id,
+                                    'permission_id' => $filter->permissions[0]->id, 
                                     'toolbox_talk_id' => $toolboxTalk->id,
                                     'due_date' => $request->due_date ? $request->due_date : null,
                                     'user_id' => $filter->id,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
+                                    'created_at' => now(), 
+                                    'updated_at' => now(), 
                                 ];
                             }
                         }
@@ -511,13 +318,13 @@ class ToolboxTalkController extends Controller
                 $dataToInsert = [];
                 foreach ($usersDecode as $userId) {
                     $getUser = User::with('roles')->find($userId);
-                    if ($getUser) {
+                    if ($getUser) { 
                         $dataToInsert[] = [
                             'toolbox_talk_id' => $toolboxTalk->id,
                             'due_date' => $request->due_date ? $request->due_date : null,
                             'user_id' => $getUser->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
+                            'created_at' => now(), 
+                            'updated_at' => now(), 
                         ];
                     }
                 }
@@ -528,38 +335,38 @@ class ToolboxTalkController extends Controller
             }
             DB::commit();
             return response()->json(['msg' => 'Toolbox Talk has been assigned successfully'], 201);
-        } catch (Exception $e) {
+        } catch(Exception $e){
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+            return response()->json(['error' => 'Failed to assign Toolbox Talks: ' . $e->getMessage()], 500);
+        }   
+        
     }
 
     // Get Details 
-    public function toolboxTalkDetails(Request $req, $id)
-    {
-        try {
-            if (isset($id) && !empty($id)) {
+    public function toolboxTalkDetails(Request $req, $id){
+        try{
+            if(isset($id) && !empty($id)){
                 $talkDetails = ToolboxTalk::withTrashed()->with('questions', 'getAssignedUsers', 'getCreatedByUser', 'resourceUrlData', 'attachmentsPdfData')->findOrFail($id);
                 return response()->json([
                     'talkDetails'  => new ToolBoxDetailsResource($talkDetails),
                     'status'       => 200,
-                ]);
+                ]); 
             } else {
                 return response()->json(['msg' => 'Id not found !!']);
             }
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        }catch(Exception $e){
+            return response()->json(['error' => 'Failed to fetch Toolbox Talk Details: ' . $e->getMessage()], 500);
         }
     }
-
-
+    
+    
     //Get assigned to me toolbox detail 
-    public function assignedToMeDetail(GetAssignToMeDetailRequest $req)
-    {
-        $loggedinuser = 1;
-        try {
+    public function assignedToMeDetail(GetAssignToMeDetailRequest $req) {
+        $loggedinuser = 4392;
+         try{
             $getAssignToMeTalks = AssignToolboxTalk::where('user_id', $loggedinuser)->where('toolbox_talk_id', $req->toolbox_talk_id)->with('getToolboxTalk')->first();
-            if (!empty($getAssignToMeTalks)) {
+            // dd($getAssignToMeTalks , "dsl;fkdsl;fk;l");
+            if(!empty($getAssignToMeTalks)){
                 return response()->json([
                     'status'                   => 200,
                     'msg'                      => 'Successfully fetched Toolbox Talks that are assigned to you.',
@@ -571,30 +378,30 @@ class ToolboxTalkController extends Controller
                     'msg'                      => 'Data not found!'
                 ]);
             }
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+
+        } catch(Exception $e){
+            return response()->json(['error' => 'Failed to fetch Toolbox Talk Details: ' . $e->getMessage()], 500);
         }
     }
-
-
+    
+    
     // Delete single talk
-    public function deleteVideoUrlOrAttachments(DeleteUrlAndPdfRequest $req)
-    {
+    public function deleteVideoUrlOrAttachments(DeleteUrlAndPdfRequest $req){
         try {
             $toolboxTalk = ToolboxTalk::withTrashed()->find($req->toolbox_talk_id);
-            if (!empty($toolboxTalk) && isset($req->attachment_id) && is_array($req->attachment_id)) {
+            if(!empty($toolboxTalk) && isset($req->attachment_id) && is_array($req->attachment_id)){
                 $filesToDelete = MediaFile::whereIn('id', $req->attachment_id)->where('toolbox_talk_id', $req->toolbox_talk_id)->get();
                 $deletedFiles = [];
                 foreach ($filesToDelete as $file) {
-                    $filePath = storage_path('app/public/toolbox_talks/' . $file->file_name);
+                    $filePath = storage_path('app/public/toolbox_talks/'.$file->file_name);
                     if (file_exists($filePath)) {
                         unlink($filePath);
                         $deletedFiles[] = $file->id;
                     }
                 }
-                if (count($deletedFiles) > 0) {
+                if(count($deletedFiles) > 0){
                     $deleted = MediaFile::whereIn('id', $deletedFiles)->forceDelete();
-                    if ($deleted) {
+                    if($deleted){
                         return response()->json([
                             'message' => 'Attachment is deleted successfully.',
                         ], 200);
@@ -606,26 +413,26 @@ class ToolboxTalkController extends Controller
                 }
             } else {
                 return response()->json([
-                    'message' => 'Data not found!.',
+                        'message' => 'Data not found!.',
                 ], 404);
             }
+            
         } catch (Exception $e) {
             return response()->json(['error' => 'Toolbox Talk not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to delete Toolbox Talk: ' . $e->getMessage()], 500);
         }
     }
 
     // Delete Selected Talks
-    public function deleteSelectedTalks(Request $request)
-    {
-        try {
+    public function deleteSelectedTalks(Request $request){
+        try {   
             $toolboxTalk_ids = json_decode($request->toolboxTalk_ids);
             $toolboxTalk_ids = $toolboxTalk_ids;
-            if (isset($toolboxTalk_ids) && !empty($toolboxTalk_ids)) {
+            if (isset($toolboxTalk_ids) && !empty($toolboxTalk_ids)){
                 foreach ($toolboxTalk_ids as $key => $toolboxTalk_id) {
                     $talk = ToolboxTalk::withTrashed()->findOrFail($toolboxTalk_id);
-                    if (!empty($talk)) {
+                    if(!empty($talk)){
                         $getQuestionId = Question::where('toolbox_talk_id', $talk['id'])->first();
                         $deletedVideoLinks = ResourceVideoLink::where('toolbox_talk_id', $talk['id'])->delete();
                         $deletedPdfAttachments = MediaFile::where('toolbox_talk_id', $talk['id'])->delete();
@@ -638,35 +445,29 @@ class ToolboxTalkController extends Controller
                         return response()->json([
                             'status'   => 404,
                             'msg'  => 'No data found of toolbox',
-                        ]);
+                            ]);
                     }
                 }
                 return response()->json(['message' => 'Selected Toolbox Talk have been deleted successfully'], 200);
-            } else {
+            } else{
                 return response()->json(['error' => 'Please select at least one toolbox talk.'], 500);
             }
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to delete selected Toolbox Talks: ' . $e->getMessage()], 500);
         }
     }
 
     // Assigned Test API
-    public function updateNewAssignedToolboxTalk(AssignedToolboxTalkRequest $request)
-    {
-
-        try {
+    public function updateNewAssignedToolboxTalk(AssignedToolboxTalkRequest $request){
+        
+        try{
             $toolboxTalk = ToolboxTalk::withTrashed()->with('getAssignedUsers')->findOrFail($request->toolbox_talk_id);
-            if ($toolboxTalk->status == 1 && $request->isLibrary == 1) {
+            if($toolboxTalk->status == 1 && $request->isLibrary ==1 ){
                 return response()->json([
                     'msg' => 'Toolbox talk already assigned.'
                 ], 409);
             }
-            // if (isset($request->due_date) && !empty($request->due_date)) {
-            //     $date = Carbon::createFromFormat('d-m-Y', $request->due_date);
-            //     $formattedDate = $date->format('Y-m-d H:i:s');
-            // } else {
-            //     $formattedDate = null;
-            // }
+          
             DB::beginTransaction();
             $dataToInsert = array();
             //new fresh code 
@@ -694,202 +495,16 @@ class ToolboxTalkController extends Controller
                 AssignToolboxTalk::insert($dataToInsert);
                 $toolboxTalk->update(['status' => '1', 'is_created' => '1', 'updated_at' => Carbon::now()]);
             }
-            //     if ((isset($request->selectAll) && $request->selectAll == 'true')) {
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         User::where('id', '!=', "1")->chunk(100, function ($allUsers) use ($toolboxTalk, &$dataToInsert, &$due_date) {
-            //             foreach ($allUsers as $userData) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         });
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectRole) && !empty($request->selectRole)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         // foreach ($departsIdsAsInt as $departmentId) {
-            //         $usersWithDepartment = User::role($departsIdsAsInt)->get();
-            //         foreach ($rolesIdsAsInt as $roleId) {
-            //             $usersWithRoles = $usersWithDepartment->filter(function ($user) use ($roleId) {
-            //                 return $user->hasPermissionTo($roleId);
-            //             });
-            //             foreach ($usersWithRoles as $userData) {
-            //                 $tem[] = $userData->id;
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //         // }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectRole) && !empty($request->selectRole))) {
-            //         // $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $tem = array();
-            //         $usersWithDepartment = User::role($departsIdsAsInt)->get();
-            //         foreach ($rolesIdsAsInt as $roleId) {
-            //             $usersWithRoles = $usersWithDepartment->filter(function ($user) use ($roleId) {
-            //                 return $user->hasPermissionTo($roleId);
-            //             });
-            //             foreach ($usersWithRoles as $userData) {
-            //                 $tem[] = $userData->id;
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $userData->id,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //     } else if ((isset($request->selectDept) && !empty($request->selectDept)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         $usersWithDepartments = User::role($departsIdsAsInt)->get();
-            //         foreach ($usersWithDepartments  as $departs) {
-            //             $tem[] = $departs->id;
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $departs->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //     } else if ((isset($request->selectRole) && !empty($request->selectRole)) && (isset($request->selectUser) && !empty($request->selectUser))) {
-            //         // $dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         $tem = array();
-            //         $usersWithDepartment = User::permission($rolesIdsAsInt)->get();
-            //         foreach ($usersWithDepartment as $userData) {
-            //             $tem[] = $userData->id;
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $userData->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //         foreach ($selectedUsers as $suser) {
-            //             if (!in_array($suser, $tem)) {
-            //                 $dataToInsert[] = [
-            //                     'toolbox_talk_id' => $toolboxTalk->id,
-            //                     'due_date' => $due_date ?? null,
-            //                     'user_id' => $suser,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ];
-            //             }
-            //         }
-            //     } else if (isset($request->selectDept) && !empty($request->selectDept)) {
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $departsIdsAsInt = array_map('intval', $request->selectDept);
-            //         $usersWithDepartments = User::role($departsIdsAsInt)->get();
-            //         foreach ($usersWithDepartments  as $departs) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $departs->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //     } else if (isset($request->selectRole) && !empty($request->selectRole)) {
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $rolesIdsAsInt = array_map('intval', $request->selectRole);
-            //         $usersWithDepartment = User::permission($rolesIdsAsInt)->get();
-            //         foreach ($usersWithDepartment as $userData) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $userData->id,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //     } else if (isset($request->selectUser) && !empty($request->selectUser)) {
-            //         //$dataToInsert = [];
-            //         $due_date = $request->due_date;
-            //         $selectedUsers = array_map('intval', $request->selectUser);
-            //         foreach ($selectedUsers as $suser) {
-            //             $dataToInsert[] = [
-            //                 'toolbox_talk_id' => $toolboxTalk->id,
-            //                 'due_date' => $due_date ?? null,
-            //                 'user_id' => $suser,
-            //                 'created_at' => now(),
-            //                 'updated_at' => now(),
-            //             ];
-            //         }
-            //     }
-            // }
-
-            // if (!empty($toolboxTalk) && count($toolboxTalk->getAssignedUsers) > 0) {
-            //     foreach ($toolboxTalk->getAssignedUsers as $alreadyassignedUsers) {
-            //         foreach ($dataToInsert as $key =>  $user) {
-            //             if ($user['user_id'] == $alreadyassignedUsers->user_id) {
-            //                 unset($dataToInsert[$key]);
-            //             }
-            //         }
-            //     }
-            // }
-            // if (!empty($dataToInsert)) {
-            //     AssignToolboxTalk::insert($dataToInsert);
-            //     $toolboxTalk->update(['status' => '1']);
-            //     $toolboxTalk->update(['is_created' => '1']);
-            // }
-
+            
+            
             DB::commit();
             return response()->json(['msg' => 'Toolbox talk has been assigned successfully'], 201);
-        } catch (Exception $e) {
+        } catch(Exception $e){
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+            return response()->json(['error' => 'Failed to assign Toolbox Talks: ' . $e->getMessage()], 500);
+        } 
     }
-
+    
     // Update Attachments
     public function updateAttachmentsPdfUrl(UpdateAttachmentRequest $req)
     {
@@ -903,51 +518,52 @@ class ToolboxTalkController extends Controller
                 );
                 $toolboxTalk->update(['updated_at' => Carbon::now()]);
             }
-
-            if (!empty($toolboxTalk)) {
+            
+            if(!empty($toolboxTalk)){
                 $fileData = [];
-                if (!empty($req->pdf_file) && count($req->pdf_file) > 0) {
-                    $i = 0;
+                if(!empty($req->pdf_file) && count($req->pdf_file) > 0){ 
+                    $i=0;
                     foreach ($req->file('pdf_file') as $file) {
-                        $fileName = 'toolbox_talk_' . $toolboxTalk->id . rand(10, 100) . time() . '.pdf';
+                        $fileName = 'toolbox_talk_' . $toolboxTalk->id . rand(10,100). time() . '.pdf';
                         $filePath = $file->storeAs('toolbox_talks', $fileName, 'public');
-                        $fileData[$i]['file_name'] =  $fileName;
-                        $fileData[$i]['file_path'] = 'storage/' . $filePath;
+                        $fileData[$i]['file_name'] =  $fileName ;
+                        $fileData[$i]['file_path'] = 'storage/'.$filePath;
                         $fileData[$i]['toolbox_talk_id'] = $toolboxTalk->id;
                         $i++;
-                    }
-                    if (count($fileData) > 0) {
+                    } 
+                    if(count($fileData) > 0){
                         MediaFile::insert($fileData);
+                        $toolboxTalk->update(['updated_at' => Carbon::now()]);
                     }
-                    $toolboxTalk->update(['updated_at' => Carbon::now()]);
+                   
                 }
+                
             }
             return response()->json(['message' => 'Attachments updated successfully.', 'Updated Toolbox Talk' => $toolboxTalk], 200);
         } catch (\Throwable $th) {
-            return response()->json($this->getExceptionResponse($th));
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 
     // Update Questions 
-    public function updateQuestions(UpdateQuestionsRequest $request)
-    {
+    public function updateQuestions(UpdateQuestionsRequest $request){
         try {
             $toolbox_talk_id = $request->toolbox_talk_id;
             $toolboxTalk = ToolboxTalk::withTrashed()->findOrFail($toolbox_talk_id);
-            if (isset($request->questions) && !empty($request->questions)) {
+            if(isset($request->questions) && !empty($request->questions)) {
                 $questions = json_decode($request->questions, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     return response()->json(['error' => 'Invalid JSON format for questions'], 400);
                 }
                 $checkUpdated = $toolboxTalk->update(['number_of_questions_to_ask' => $request->attemptQuestions, 'number_of_correct_answer_to_pass' => $request->number_of_correct_answer_to_pass]);
-                foreach ($questions as $question) {
+                foreach($questions as $question) {
                     Log::info('Processing question ID: ' . $question['id']);
                     $quest = $toolboxTalk->questions()->find($question['id']);
                     if ($quest) {
                         $quest->update([
                             "name" => $question['name']
                         ]);
-                        foreach ($question['options'] as $option) {
+                        foreach($question['options'] as $option) {
                             $optiondata = $quest->options()->find($option['id']);
                             if ($optiondata) {
                                 $optiondata->update([
@@ -965,9 +581,9 @@ class ToolboxTalkController extends Controller
                 }
                 $toolboxTalk->update(['updated_at' => Carbon::now()]);
             }
-            if ($toolboxTalk) {
-                if (isset($request->new_questions) && !empty($request->new_questions)) {
-                    $questions_decode = json_decode($request->new_questions, true);
+            if($toolboxTalk) {
+                if(isset($request->new_questions)&& !empty($request->new_questions)) {
+                    $questions_decode = json_decode($request->new_questions, true); 
                     $checkUpdated = $toolboxTalk->update(['number_of_questions_to_ask' => $request->attemptQuestions, 'number_of_correct_answer_to_pass' => $request->number_of_correct_answer_to_pass]);
                     foreach ($questions_decode as $new_question) {
                         $new_add_question = $toolboxTalk->questions()->create([
@@ -977,7 +593,7 @@ class ToolboxTalkController extends Controller
                         foreach ($new_question['options'] as $index => $optiond) {
                             $new_add_question->options()->create([
                                 'name' => $optiond,
-                                'correct_answer' => (++$index == $new_question['correctAnswer']) ? '1' : '0',
+                                'correct_answer' => (++$index == $new_question['correctAnswer']) ? '1' : '0',  
                                 'question_id' => $new_add_question->id,
                             ]);
                         }
@@ -987,13 +603,12 @@ class ToolboxTalkController extends Controller
             }
             return response()->json(['message' => 'Questions updated successfully.', 'Toolbox Talk' => $toolboxTalk], 200);
         } catch (\Throwable $th) {
-            return response()->json($this->getExceptionResponse($th));
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
 
     // Apply filters
-    public function applyFiltersTalks(Request $request)
-    {;
+    public function applyFiltersTalks(Request $request){;
         $validatedData = $request->validate([
             'start_due_date' => 'required|date',
             'end_due_date' => 'required|date|after_or_equal:start_due_date',
@@ -1001,7 +616,7 @@ class ToolboxTalkController extends Controller
         $startDueDate = $validatedData['start_due_date'];
         $endDueDate = $validatedData['end_due_date'];
         try {
-            $user_id = 1;
+            $user_id = Auth::user()->id ?? '4392';
             $toolboxTalks = ToolboxTalk::where('user_id', $user_id)->whereBetween('due_date', [$startDueDate, $endDueDate])->get();
             $toolboxTalksWithStats = $toolboxTalks->map(function ($talk) {
                 $totalUsers = $talk->getAssignRole->count();
@@ -1024,9 +639,11 @@ class ToolboxTalkController extends Controller
             return response()->json([
                 'msg' => 'Toolbox Talks fetched successfully',
                 'toolboxTalks' => $toolboxTalksWithStats
-            ], 200);
+            ], 200); 
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Failed to fetch Toolbox Talks:' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1048,7 +665,7 @@ class ToolboxTalkController extends Controller
                     'questions' => $toolboxTalk->questions,
                 ];
                 $pdf = PDF::loadView('pdf_view', $data);
-                $pdfString = $pdf->output();
+                $pdfString = $pdf->output(); 
                 $base64Pdf = base64_encode($pdfString);
                 return response()->json([
                     'message' => 'PDF generated successfully!',
@@ -1060,13 +677,16 @@ class ToolboxTalkController extends Controller
                 ], 500);
             }
         } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Failed to Export Toolbox Talk PDF:' . $e->getMessage()
+            ], 500);
         }
     }
 
     // Attempt Questions
-    public function attemptQuestions(Request $request)
+    public function attemptQuestions(AttemptQuestionsRequest $request)
     {
+        $authUser = Auth::user()->id ?? '4392';
         try {
             // Decode the questions from JSON format
             $questions = json_decode($request->questions, true);
@@ -1075,7 +695,7 @@ class ToolboxTalkController extends Controller
             }
             $toolboxTalk = ToolboxTalk::withTrashed()->find($request->toolbox_talk_id);
             $assignToolboxTalk = AssignToolboxTalk::where('toolbox_talk_id', $request->toolbox_talk_id)
-                ->where('user_id', $request->user_id)
+                ->where('user_id', $authUser)
                 ->first();
             if ($assignToolboxTalk && $assignToolboxTalk->result == 'passed') {
                 return response()->json(['message' => 'You have already passed this assessment and cannot attempt it again.'], 403);
@@ -1095,12 +715,12 @@ class ToolboxTalkController extends Controller
                 $isCorrect = ($correctAnswer && $questionData['answer'] == (string)$correctAnswer->id) ? 1 : 2;
 
                 $attemptQuestion = AttemptQuestion::create([
-                    'user_id' => $request->user_id,
+                    'user_id' => $authUser,
                     'question_id' => $questionData['question_id'],
                     'toolbox_talk_id' => $request->toolbox_talk_id,
                     'answer' => $questionData['answer'],
                     'is_correct' => $isCorrect,
-                    'attempt_count' => $assignToolboxTalk->attempt_count + 1
+                    'attempt_count' => !empty($assignToolboxTalk) ? ($assignToolboxTalk->attempt_count + 1) : 1
                 ]);
 
                 if ($isCorrect === 1) {
@@ -1113,9 +733,9 @@ class ToolboxTalkController extends Controller
                 $result = 'passed';
                 if ($assignToolboxTalk) {
                     $assignToolboxTalk->update([
-                        'status' => 2,
+                        'status' => 3,
                         'result' => 'passed',
-                        'attempt_count' => $assignToolboxTalk->attempt_count + 1,
+                        'attempt_count' => !empty($assignToolboxTalk) ? ($assignToolboxTalk->attempt_count + 1) : 1,
                         'date_time' => now()
                     ]);
                 }
@@ -1123,9 +743,9 @@ class ToolboxTalkController extends Controller
                 $result = 'failed';
                 if ($assignToolboxTalk) {
                     $assignToolboxTalk->update([
-                        'status' => 1,
+                        'status' => 3,
                         'result' => 'failed',
-                        'attempt_count' => $assignToolboxTalk->attempt_count + 1,
+                        'attempt_count' => !empty($assignToolboxTalk) ? ($assignToolboxTalk->attempt_count + 1) : 1,
                         'date_time' => now()
                     ]);
                 }
@@ -1133,33 +753,36 @@ class ToolboxTalkController extends Controller
 
             return response()->json([
                 'message' => 'Questions attempted successfully.',
-                'data' => $attempts,
+                'data' => AttemptQuestionsResource::collection($attempts),
                 'result' => [
                     'correct_count' => $correctCount,
                     'status' => $result,
                 ]
             ], 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'An error occurred while processing your request.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
 
     // Update existing ing Questions Private Methods
     private function updateExistingQuestions($toolboxTalk, $request)
     {
-        if (isset($request->questions) && !empty($request->questions)) {
+        if(isset($request->questions)&& !empty($request->questions)) {
             $questions = json_decode($request->questions, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return response()->json(['error' => 'Invalid JSON format for questions'], 400);
             }
-            foreach ($questions as $question) {
+            foreach($questions as $question) {
                 Log::info('Processing question ID: ' . $question['id']);
                 $quest = $toolboxTalk->questions()->find($question['id']);
                 if ($quest) {
                     $quest->update([
                         "name" => $question['name']
                     ]);
-                    foreach ($question['options'] as $option) {
+                    foreach($question['options'] as $option) {
                         $optiondata = $quest->options()->find($option['id']);
                         if ($optiondata) {
                             $optiondata->update([
@@ -1175,14 +798,15 @@ class ToolboxTalkController extends Controller
                     return response()->json(['error' => 'Question not found for ID ' . $question['id']], 404);
                 }
             }
+
         }
     }
 
     // Add new Questions Private method
     private function addNewQuestions($toolboxTalk, $request)
     {
-        if (isset($request->new_questions) && !empty($request->new_questions)) {
-            $questions_decode = json_decode($request->new_questions, true);
+        if(isset($request->new_questions)&& !empty($request->new_questions)) {
+            $questions_decode = json_decode($request->new_questions, true); 
             foreach ($questions_decode as $new_question) {
                 $new_add_question = $toolboxTalk->questions()->create([
                     'name' => $new_question['name'],
@@ -1191,7 +815,7 @@ class ToolboxTalkController extends Controller
                 foreach ($new_question['options'] as $index => $optiond) {
                     $new_add_question->options()->create([
                         'name' => $optiond,
-                        'correct_answer' => (++$index == $new_question['correctAnswer']) ? '1' : '0',
+                        'correct_answer' => (++$index == $new_question['correctAnswer']) ? '1' : '0',  
                         'question_id' => $new_add_question->id,
                     ]);
                 }
@@ -1202,7 +826,7 @@ class ToolboxTalkController extends Controller
     // Private Assigned Method
     private function assignNewToolboxTalk($toolboxTalk, $request)
     {
-        if ((isset($request->selectAll) && $request->selectAll == 'true') || ((isset($request->selectDept) && $request->selectDept == 'true')
+        if ((isset($request->selectAll) && $request->selectAll == 'true') || ((isset($request->selectDept) && $request->selectDept == 'true') 
             && (isset($request->selectRole) && $request->selectRole == 'true')) || (isset($request->selectUser) && $request->selectUser == 'true')) {
             $dataToInsert = [];
             $due_date = $request->due_date ? $request->due_date : null;
@@ -1212,8 +836,8 @@ class ToolboxTalkController extends Controller
                         'toolbox_talk_id' => $toolboxTalk->id,
                         'due_date' => $due_date ?? null,
                         'user_id' => $userData->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => now(), 
+                        'updated_at' => now(), 
                     ];
                 }
             });
@@ -1238,7 +862,7 @@ class ToolboxTalkController extends Controller
                             'toolbox_talk_id' => $toolboxTalk->id,
                             'due_date' => $request->due_date ? $request->due_date : null,
                             'user_id' => $filter->id,
-                            'created_at' => now(),
+                            'created_at' => now(), 
                             'updated_at' => now(),
                         ];
                     }
@@ -1248,6 +872,7 @@ class ToolboxTalkController extends Controller
                     }
                 }
             }
+            
         } else if (isset($request->roles) && !empty($request->roles)) {
             $roles = json_decode($request->roles);
             foreach ($roles as $key => $role) {
@@ -1261,7 +886,7 @@ class ToolboxTalkController extends Controller
                             'toolbox_talk_id' => $toolboxTalk->id,
                             'due_date' => $request->due_date ? $request->due_date : null,
                             'user_id' => $filter->id,
-                            'created_at' => now(),
+                            'created_at' => now(), 
                             'updated_at' => now(),
                         ];
                     }
@@ -1271,6 +896,7 @@ class ToolboxTalkController extends Controller
                     }
                 }
             }
+            
         } else if (isset($request->permissions) && !empty($request->permissions)) {
             $permissions = json_decode($request->permissions);
             $dataToInsert = [];
@@ -1281,12 +907,12 @@ class ToolboxTalkController extends Controller
                     if ($usersWithPermission->isNotEmpty()) {
                         foreach ($usersWithPermission as $filter) {
                             $dataToInsert[] = [
-                                'permission_id' => $filter->permissions[0]->id,
+                                'permission_id' => $filter->permissions[0]->id, 
                                 'toolbox_talk_id' => $toolboxTalk->id,
                                 'due_date' => $request->due_date ? $request->due_date : null,
                                 'user_id' => $filter->id,
-                                'created_at' => now(),
-                                'updated_at' => now(),
+                                'created_at' => now(), 
+                                'updated_at' => now(), 
                             ];
                         }
                     }
@@ -1301,13 +927,13 @@ class ToolboxTalkController extends Controller
             $dataToInsert = [];
             foreach ($usersDecode as $userId) {
                 $getUser = User::with('roles')->find($userId);
-                if ($getUser) {
+                if ($getUser) { 
                     $dataToInsert[] = [
                         'toolbox_talk_id' => $toolboxTalk->id,
                         'due_date' => $request->due_date ? $request->due_date : null,
                         'user_id' => $getUser->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => now(), 
+                        'updated_at' => now(), 
                     ];
                 }
             }
@@ -1317,25 +943,25 @@ class ToolboxTalkController extends Controller
             }
         }
     }
-
-    public function deleteQuestionPerToolboxTalk($id)
-    {
+    
+    public function deleteQuestionPerToolboxTalk($id){
         try {
             $deleteQuestion = Question::where('id', $id)->with('options')->first();
-            if (!empty($deleteQuestion)) {
+            if(!empty($deleteQuestion)){
                 $deletedQuestion = $deleteQuestion->delete();
-                if ($deletedQuestion) {
+                if($deletedQuestion ){
                     $deleteQuestion->options()->delete();
                 }
                 return response()->json(['message' => 'Question is deleted successfully!'], 200);
             } else {
                 return response()->json(['message' => 'Data not found'], 404);
             }
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
-
+    
     public function deleteSelectedCmsLibrary(DeleteUpdateCmsLibraryRequest $req)
     {
         try {
@@ -1343,17 +969,17 @@ class ToolboxTalkController extends Controller
             if ($getToolboxTalk) {
                 return response()->json(['message' => 'Toolbox talk library is deleted successfully!'], 200);
             }
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
         }
     }
-
-    // Get Toolbox Talks data
+    
+   // Get Toolbox Talks data
     public function createdByMeTalks(Request $req)
     {
         try {
             $filter = $this->filterRequestData($req);
-            $user_id = 1;
+            $user_id = Auth::user()->id ?? '4392';
             $toolboxTalks = GetAllCreatedByMeTalksResource::collection(ToolboxTalk::searchingCreatedByAndLibraryFilter($req)->where('user_id', $user_id)->withCount('getAssignedUsers', 'getCountCompleted')->where('deleted_at', null)->orderBy($filter['sortBy'], $filter['sortOrder'])->paginate($filter['showPage']))->response()->getData(true);
             return response()->json([
                 'msg'          => 'Toolbox Talks fetched successfully',
@@ -1361,18 +987,20 @@ class ToolboxTalkController extends Controller
                 'toolboxTalks' => $toolboxTalks
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Failed to fetch Toolbox Talks: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     public function assignToMeToolboxTalks(Request $req)
     {
-        $user_id = 2; // this is auth user id
+        $user_id = Auth::user()->id ?? 4392; // this is auth user id
         $filter = $this->filterRequestData($req);
-
         try {
             if (isset($user_id) && !empty($user_id)) {
                 $getAssignToMeTalks = GetAllAssignedByMeTalksResource::collection(AssignToolboxTalk::searchingAssignedMeFilter($req)->where('user_id', $user_id)->with('getToolboxTalk')->withCount('getToolboxTalk')->where('deleted_at', null)->orderBy($filter['sortBy'], $filter['sortOrder'])->paginate($filter['showPage']))->response()->getData(true);
+                // $getAssignToMeTalks = GetAllAssignedByMeTalksResource::collection(AssignToolboxTalk::searchingAssignedMeFilter($req)->where('user_id', $user_id)->with('getTestToolboxTalk')->withCount('getToolboxTalk')->where('deleted_at', null)->orderBy($filter['sortBy'], $filter['sortOrder'])->paginate($filter['showPage']))->response()->getData(true);
                 if (count($getAssignToMeTalks) > 0) {
                     return response()->json([
                         'status'                   => 200,
@@ -1390,28 +1018,118 @@ class ToolboxTalkController extends Controller
                     'msg' => 'User ID is required.',
                 ], 400);
             }
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'msg' => 'An error occurred while fetching the data.',
+                'error' => $th->getMessage(),
+            ], 500);
         }
     }
 
     public function companyLibraryToolboxTalks(Request $req)
     {
-        $user_id = 1;
+        $user_id = Auth::user()->id ?? '4392';
         $filter = $this->filterRequestData($req);
         try {
-            $cmsLibraryToolboxTalks = GetAllCmsLibraryTalksResource::collection(ToolboxTalk::searchingCreatedByAndLibraryFilter($req)->where('user_id', $user_id)->where('is_library_deleted', '!=', "1")->with('getCreatedByUser')->withCount('attachmentsPdfData')->where('deleted_at', null)->where(function ($query) {
+            $cmsLibraryToolboxTalks = GetAllCmsLibraryTalksResource::collection(ToolboxTalk::searchingCreatedByAndLibraryFilter($req)->where('user_id', $user_id)->where('is_library_deleted', '!=', "1")->with('getCreatedByUser')->withCount('attachmentsPdfData')->withCount('attachmentsVideosData')->where('deleted_at', null)->where(function ($query) {
                 $query->where('is_library', '1')->orWhere('is_library', 2);
             })->orderBy($filter['sortBy'], $filter['sortOrder'])->paginate(20))->response()->getData(true);
+            
             return response()->json([
                 'msg'           => 'Company Toolbox Talks Talks fetched successfully.',
                 'count'         => count($cmsLibraryToolboxTalks),
                 'toolboxTalks'  => $cmsLibraryToolboxTalks
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Failed to fetch Library Toolbox Talks: ' . $e->getMessage()
+            ], 500);
         }
     }
     // end get data
-
+    
+    public function updateVideoPdfsStatus(CheckVideoPdfStatusRequest $req)
+    {
+        $authUser = Auth::user()->id ?? '4392';
+        if ($req->type == 'Video') {
+            $updateStatus = tap(ResourceVideoLink::where('id', $req->video_id))->update(['video_status' => $req->status, 'video_state' => 'Completed', 'user_id' => $authUser, 'toolbox_talk_id' => $req->toolbox_talk_id])->first();
+        } else {
+            $updateStatus = tap(MediaFile::where('id', $req->file_id))->update(['media_files' => $req->status, 'file_state' => 'Completed', 'user_id' => $authUser, 'toolbox_talk_id' => $req->toolbox_talk_id])->first();
+        }
+        if ($updateStatus) {
+            return response()->json([
+                'status' => 200,
+                'data'   => $updateStatus,
+                'msg'    => $req->type . ' has been completed successfully!'
+            ]);
+        } else {
+            return response()->json([
+                'status' => 409,
+                'msg'    => 'Something went wrong'
+            ]);
+        }
+    }
+    
+    
+    public function getOnlyQuestionOptions(GetQuestionOptionsRequest $req)
+    {
+        $getQuestionOptions = ToolboxTalk::where('id', $req->toolbox_talk_id)->with('questionsOptions')->first();
+        if (!empty($getQuestionOptions)) {
+            return response()->json([
+                'msg'                => 'Toolbox Talks questions and options data has been fetched successfully.',
+                'data'               => new GetQuestionOptionsResource($getQuestionOptions)
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => 404,
+                'msg'    => 'Data not found!'
+            ]);
+        }
+    }
+    
+    //Video or attachement status
+    public function videoPdfsStatus(CheckVideoPdfsFileStatusRequest $req)
+    {
+        $authUser = Auth::user()->id ?? '4392';
+        $videostatus = ResourceVideoLink::where('toolbox_talk_id', $req->toolbox_talk_id)->where('user_id', $authUser)->first();
+        $filestatus1 = MediaFile::where('toolbox_talk_id', $req->toolbox_talk_id)->where('user_id', $authUser)->get();
+        $filestatus2 = MediaFile::where('toolbox_talk_id', $req->toolbox_talk_id)->where('user_id', $authUser)->where('file_status', 1)->get();
+        if (!empty($videostatus) && ($videostatus != null || $videostatus != '')) {
+            return response()->json([
+                'status' => 200,
+                'vorfstatus'   => $videostatus->video_status == 1 ? 1 : 2
+            ]);
+        } else if (!empty($filestatus1) && count($filestatus1) > 0) {
+            return response()->json([
+                'status' => 200,
+                'vorfstatus'   => count($filestatus1) == count($filestatus2) ? 1 : 2
+            ]);
+        } else {
+            return response()->json([
+                'status' => 200,
+                'vorfstatus'   => 3
+            ]);
+        }
+    }
+    
+    public function acknowledgedStatus(AcknowledgedStatusRequest $req)
+    {
+        try {
+            $authUserId = Auth::user()->id ?? '4392';
+            $updateAcknowledged = AssignToolboxTalk::where('toolbox_talk_id', $req->toolbox_talk_id)->where('user_id', $authUserId)->update(['status' => 2, 'date_time' => now()]);
+            if ($updateAcknowledged) {
+                return response()->json([
+                    'message' => 'AssignToolBox acknowledged successfully!',
+                ], 200);
+            } else {
+                return response()->json([
+                    'message' => 'Something went wrong!',
+                ], 409);
+            }
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch Library Toolbox Talks',
+            ], 500);
+        }
+    }
 }

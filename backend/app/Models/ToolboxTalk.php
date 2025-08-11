@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Support\Facades\Auth;
 
 class ToolboxTalk extends Model
 {
@@ -14,97 +14,108 @@ class ToolboxTalk extends Model
 
     protected $guarded = [];
 
-    public function questions()
-    {
-        return $this->hasMany(Question::class, 'toolbox_talk_id', 'id')->with('options', 'correctAnswer');
+    public function questions() {
+        return $this->hasMany(Question::class, 'toolbox_talk_id', 'id')->with('options','correctAnswer');
     }
-
-    public function resourceUrlData()
-    {
+    
+    public function questionsOptions() {
+        return $this->hasMany(Question::class, 'toolbox_talk_id', 'id')->with('options');
+    }
+    
+    public function resourceUrlData() {
+        return $this->hasMany(ResourceVideoLink::class, 'toolbox_talk_id', 'id');
+    }
+    
+    public function attachmentsPdfData() {
+        return $this->hasMany(MediaFile::class, 'toolbox_talk_id', 'id');
+    }
+    
+    public function attachmentsVideosData() {
         return $this->hasMany(ResourceVideoLink::class, 'toolbox_talk_id', 'id');
     }
 
-    public function attachmentsPdfData()
-    {
-        return $this->hasMany(MediaFile::class, 'toolbox_talk_id', 'id');
-    }
-
-    public function getCreatedByUser()
-    {
+    public function getCreatedByUser(){
         return $this->belongsTo(User::class, 'user_id', 'id')->with('roles');
     }
 
-    public function getAssignRole()
-    {
+    public function getAssignRole() {
         return $this->hasMany(AssignToolboxTalk::class, 'toolbox_talk_id', 'id')->with('getRole', 'getPermission');
     }
-
-    public function getAssignedUsers()
-    {
+    
+    public function getAssignedUsers() {
         return $this->hasMany(AssignToolboxTalk::class, 'toolbox_talk_id', 'id')->with('assignedUsers');
     }
-
-    public function getCountCompleted()
-    {
-        return $this->hasMany(AssignToolboxTalk::class, 'toolbox_talk_id', 'id')
-            ->where('status', 2);
+    
+    public function getCountCompleted() {
+            return $this->hasMany(AssignToolboxTalk::class, 'toolbox_talk_id', 'id')
+                ->where('status', 2);
     }
-
+    
+    
     public function scopeSearchingCreatedByAndLibraryFilter($query, $req)
     {
         $startDate = \Carbon\Carbon::parse($req->start_date)->startOfDay();
         $endDate = \Carbon\Carbon::parse($req->end_date)->endOfDay();
         $search = $req->search;
-        $status = $req->status;
-        $lastUpdated = $req->last_updated;
         $searchCms = $req->search_cms;
         $createdAtCms = $req->created_at_cms;
-        $authUserId = Auth::user()->id ?? 1;
+        $status = $req->status;
+        $lastUpdated = $req->last_updated;
+        $authUserId = Auth::user()->id ?? '4392';
         // $createdByMe = $req->created_by;
         if ((isset($req->search) && $req->search != null || $req->search != '') && (isset($req->status) && ($req->status != null || $req->status != '')) && (isset($req->start_date) && isset($req->end_date))) {
+            // dd("test1");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($search, $status, $startDate, $endDate) {
                 $q->where('title', 'like', '%' . $search . '%')->where('status', $status)->whereBetween('created_at', [$startDate, $endDate]);
             });
         } else if ((isset($req->search) && $req->search != null || $req->search != '') && (isset($req->status) && ($req->status != null || $req->status != ''))) {
+            // dd("test2");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($search, $status) {
                 $q->where('title', 'like', '%' . $search . '%')->where('status', $status);
             });
         } else if ((isset($req->search) && $req->search != null || $req->search != '') && (isset($req->start_date) && isset($req->end_date))) {
+            // dd("test3");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($search, $startDate, $endDate) {
                 $q->where('title', 'like', '%' . $search . '%')->whereBetween('created_at', [$startDate, $endDate]);
             });
         } else if ((isset($req->status) && $req->status != null || $req->status != '') && (isset($req->start_date) && isset($req->end_date))) {
+            // dd("test4");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($status, $startDate, $endDate) {
                 $q->where('status', $status)->whereBetween('created_at', [$startDate, $endDate]);
             });
         } else if ((isset($req->search)) && ($req->search != null || $req->search != '')) {
+            // dd("test5");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%');
             });
         } else if ((isset($req->status)) && ($req->status != null || $req->status != '')) {
+            // dd("test6");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($status) {
                 $q->where('status', $status);
             });
-        } else if ((isset($req->start_date) && isset($req->end_date))) {
+        } else if ((isset($req->start_date) && isset($req->end_date)) && ($req->start_date != null && $req->end_date !=  null)) {
             return $query->where('user_id', $authUserId)->where(function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('created_at', [$startDate, $endDate]);
             });
         } else if ((isset($req->search_cms) && $req->search_cms != null || $req->search_cms != '')) {
+            // dd("test8");
             return $query->where('user_id', $authUserId)->where(function ($q) use ($searchCms) {
                 $q->where('is_library', '1')->where('is_library_deleted', '2')->where('title', 'like', '%' . $searchCms . '%');
             });
         } else if ((isset($req->sort_by)) && ($req->sort_by != null || $req->sort_by != '') && ($req->sort_by == 2)) {
+            // dd("test9");
             return $query->where('user_id', $authUserId)->where(function ($q) {
                 $q->where(function ($q) {
                     $q->where('is_library', '1')->orWhere('is_library', '2');
                 })->where('is_library_deleted', '2');
             })->orderBy('updated_at', 'desc');
         } else if ((isset($req->sort_by)) && ($req->sort_by != null || $req->sort_by != '') && $req->sort_by == 1) {
+            // dd("test10");
             return $query->where('user_id', $authUserId)->where(function ($q) {
                 $q->where(function ($q) {
                     $q->where('is_library', '1')->orWhere('is_library', '2');
                 })->where('is_library_deleted', '2');
-            })->orderBy('updated_at', 'desc');
+            })->orderBy('created_at', 'desc');
         }
         // else if ((isset($req->created_by)) && ($req->created_by != null || $req->created_by != '')) {
         //     return $query->whereHas('getCreatedByUser', function ($q) use ($authUserId, $createdByMe) {
@@ -114,4 +125,5 @@ class ToolboxTalk extends Model
         //     });
         // }
     }
+
 }

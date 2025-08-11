@@ -29,15 +29,25 @@ Route::prefix('v1')->group(function () {
     Route::post('/filter-toolbox-talks',  [ToolboxTalkController::class, 'applyFiltersTalks']);      // Apply filters
     Route::post('/update-attachments',  [ToolboxTalkController::class, 'updateAttachmentsPdfUrl']);        // update Attachments
     Route::post('/update-questions',  [ToolboxTalkController::class, 'updateQuestions']);            // update Questions
-    Route::get('/company-library-toolbox-talks',  [ToolboxTalkController::class, 'companyLibraryToolboxTalks']);
+    Route::get('/company-library-toolbox-talks',  [ToolboxTalkController::class, 'companyLibraryToolboxTalks']);  
     Route::post('/export-toolbox-pdf', [ToolboxTalkController::class, 'exportToolboxPdf']); // Export Toolbox PDF    
     Route::get('/assigned-users/{id?}', [ToolboxTalkController::class, 'getAssignedUsers']); // Export Toolbox PDF  
-
+     
     Route::post('/attempt-questions', [ToolboxTalkController::class, 'attemptQuestions']); // Attempt Questions
     Route::post('/update-new-assigned-toolbox', [ToolboxTalkController::class, 'updateNewAssignedToolboxTalk']);
-
+    
     //Assigned to me
     Route::post('/assignedtome',  [ToolboxTalkController::class, 'assignedToMeDetail']);
-    Route::get('/delete-question/{id}',  [ToolboxTalkController::class, 'deleteQuestionPerToolboxTalk']);
+    Route::get('/delete-question/{id}',  [ToolboxTalkController::class, 'deleteQuestionPerToolboxTalk']); 
     Route::post('/delete-selected-cms-library',  [ToolboxTalkController::class, 'deleteSelectedCmsLibrary']);
+    
+    Route::post('/update-video-pdf-status',  [ToolboxTalkController::class, 'updateVideoPdfsStatus']);
+    
+    Route::post('/get-questions-options',  [ToolboxTalkController::class, 'getOnlyQuestionOptions']);
+    
+    //Video or attachedment status
+    Route::post('/video-pdf-status', [ToolboxTalkController::class, 'videoPdfsStatus']);
+    
+    Route::post('/acknowledged-status', [ToolboxTalkController::class, 'acknowledgedStatus']);
+
 });

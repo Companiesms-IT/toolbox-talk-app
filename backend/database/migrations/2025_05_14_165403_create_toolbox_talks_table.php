@@ -24,7 +24,7 @@ class CreateToolboxTalksTable extends Migration
             $table->unsignedBigInteger('user_id')->nullable();    
             $table->enum('is_library',['1','2','3'])->default(null);
             $table->date('due_date')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->softDeletes();
             $table->enum('status', ['0', '1'])->default(null);
             $table->enum('is_created',['1','2'])->default(2);

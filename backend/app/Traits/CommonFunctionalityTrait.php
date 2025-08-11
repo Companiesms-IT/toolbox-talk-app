@@ -4,9 +4,7 @@ namespace App\Traits;
 
 trait CommonFunctionalityTrait
 {
-    public $usersRoleId = ['2', '3'];
-    public $trainerRoleId = '2';
-    public $clientRoleId = '3';
+ 
     public $successCode = 200;
     public $invalidPassword = 400;
     public $validationCode = 401;
