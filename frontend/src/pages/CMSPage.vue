@@ -27,7 +27,9 @@
         </div>
         <div class="description-main-wrapper">
           <span class="bottom-des">Description</span>
-          <span class="bottom-description">{{ talkDetails.description }}</span>
+          <span class="bottom-description overflow-auto">{{
+            talkDetails.description
+          }}</span>
         </div>
       </div>
     </div>
@@ -62,7 +64,12 @@
           <div class="commonContainer">
             <div class="uploadWrapper">
               <span class="uplaodHead">Upload Attachments</span>
-              <span class="attactmentSpan">{{ file.length }} Attachments</span>
+              <span class="attactmentSpan"
+                >{{
+                  file.length + (talkDetails?.video_url?.length || 0)
+                }}
+                Attachments</span
+              >
             </div>
           </div>
           <button
@@ -127,50 +134,26 @@
         </div>
         <div class="line-break opacity-20"></div>
 
-        <div class="row py-2 cstmFormRow border-0">
+        <div class="row py-2 cstmFormRow border-0 flex-nowrap">
           <div class="cstmInputBox max-w-[200px]!">
             <label for="Text1" class="form-label">Select Department</label>
           </div>
 
-          <div
-            class="flex-1"
-            :class="selectAll && 'opacity-50'"
-            id="custom-dept-select"
-            @focusin="!selectAll ? toggleDropdownDepartment() : null"
-            @focusout="closeDropdownDepartment"
-            @keydown.enter.space.prevent="toggleDropdownDepartment"
-            @keydown.esc="closeDropdownDepartment"
-            tabindex="0"
-          >
-            <div
-              class="selected-display"
-              :class="{ 'is-open': dropDownOpenDepartment }"
-            >
-              <span class="placeholder">
-                Choose a responsible person or team
-              </span>
-
-              <span class="pi pi-angle-down"></span>
-            </div>
-            <div v-if="dropDownOpenDepartment" class="options-dropdown">
-              <ul>
-                <li
-                  v-for="department in departments"
-                  :key="department.id"
-                  @click="toggleDepartmentSelection(department)"
-                  :class="{
-                    'is-selected': isSelectedDepartment(department),
-                  }"
-                >
-                  {{ department.name }}
-                </li>
-              </ul>
-            </div>
+          <div class="flex-1">
+            <DropdownWithSearch
+              anchorClass="bg-[#ededed]"
+              :options="
+                departments.sort((a, b) => a.name.localeCompare(b.name))
+              "
+              v-model="selectedDepartment"
+              :disabled="selectAll"
+              placeholder="Choose a responsible person or team"
+            />
           </div>
         </div>
-        <div class="selected-dept-main" v-if="selectedDepartment.length > 0">
+        <div class="flex gap-1" v-if="selectedDepartment.length > 0">
           <span
-            class="selected-dept-span"
+            class="selected-dept-span w-fit"
             v-for="department in selectedDepartment"
             :key="department.name"
           >
@@ -193,46 +176,20 @@
             <label for="Text1" class="form-label">Select Role</label>
           </div>
 
-          <div
-            class="flex-1"
-            :class="selectAll && 'opacity-50'"
-            @focusin="!selectAll ? toggleDropdownRole() : null"
-            @focusout="closeDropdownRole"
-            tabindex="0"
-            @keydown.enter.space.prevent="toggleDropdownRole"
-            @keydown.esc="closeDropdownRole"
-          >
-            <div
-              id="custom-role-select"
-              class="selected-display"
-              :class="{ 'is-open': dropDownOpenRole }"
-            >
-              <span class="placeholder">
-                Choose a responsible person or team
-              </span>
-
-              <span class="pi pi-angle-down"></span>
-            </div>
-            <div v-if="dropDownOpenRole" class="options-dropdown">
-              <ul>
-                <li
-                  v-for="role in roles"
-                  :key="role.id"
-                  @click="toggleRoleSelection(role)"
-                  :class="{
-                    'is-selected': isSelectedRole(role),
-                  }"
-                >
-                  {{ role.name }}
-                </li>
-              </ul>
-            </div>
+          <div class="flex-1">
+            <DropdownWithSearch
+              anchorClass="bg-[#ededed]"
+              :options="roles.sort((a, b) => a.name.localeCompare(b.name))"
+              v-model="selectedRole"
+              :disabled="selectAll"
+              placeholder="Choose a responsible person or team"
+            />
           </div>
         </div>
 
-        <div class="selected-dept-main" v-if="selectedRole.length > 0">
+        <div class="flex gap-1" v-if="selectedRole.length > 0">
           <span
-            class="selected-dept-span"
+            class="selected-dept-span w-fit"
             v-for="role in selectedRole"
             :key="role.id"
           >
@@ -255,45 +212,19 @@
             <label for="Text1" class="form-label">Users</label>
           </div>
 
-          <div
-            class="flex-1"
-            :class="selectAll && 'opacity-50'"
-            @focusin="!selectAll ? toggleDropdownUsers() : null"
-            @focusout="closeDropdownUsers"
-            tabindex="0"
-            @keydown.enter.space.prevent="toggleDropdownUsers"
-            @keydown.esc="closeDropdownUsers"
-          >
-            <div
-              id="custom-user-select"
-              class="selected-display"
-              :class="{ 'is-open': dropDownOpenUsers }"
-            >
-              <span class="placeholder">
-                Choose a responsible person or team
-              </span>
-
-              <span class="pi pi-angle-down"></span>
-            </div>
-            <div v-if="dropDownOpenUsers" class="options-dropdown">
-              <ul>
-                <li
-                  v-for="user in users"
-                  :key="user.id"
-                  @click="toggleUsersSelection(user)"
-                  :class="{
-                    'is-selected': isSelectedUsers(user),
-                  }"
-                >
-                  {{ user.name }}
-                </li>
-              </ul>
-            </div>
+          <div class="flex-1">
+            <DropdownWithSearch
+              anchorClass="bg-[#ededed]"
+              :options="users.sort((a, b) => a.name.localeCompare(b.name))"
+              v-model="selectedUsers"
+              :disabled="selectAll"
+              placeholder="Choose a responsible person or team"
+            />
           </div>
         </div>
-        <div class="selected-users-main" v-if="selectedUsers.length > 0">
+        <div class="flex gap-1" v-if="selectedUsers.length > 0">
           <span
-            class="selected-dept-span"
+            class="selected-dept-span w-fit"
             v-for="user in selectedUsers"
             :key="user.id"
           >
@@ -333,7 +264,11 @@
                   <span>{{ signOff.name }}</span>
                 </td>
                 <td>
-                  <span>{{ signOff.date || "N/A" }}</span>
+                  <span>{{
+                    signOff.date
+                      ? new Date(signOff.date).toLocaleDateString("en-GB")
+                      : "N/A"
+                  }}</span>
                 </td>
                 <td>
                   <span>{{ signOff.time || "N/A" }}</span>
@@ -369,117 +304,130 @@
     </div>
     <!-- Edit Popup -->
     <div
-      class="upload-main-container-popup"
+      class="fixed inset-0 bg-black/75 z-30"
       v-if="documentEditPopup"
       @click.self="closeEditPopup"
     >
-      <div class="popup-content">
-        <div class="upload-first-container">
-          <div class="main-heading-wrapper">
-            <span class="main-heading-span">Video</span>
-          </div>
-          <div class="link-wrapper">
-            <!-- <span>Video Link</span> -->
-            <input
-              type="text"
-              class="form-control custom_inputbox"
-              placeholder="Video Link"
-              v-model="videoLink"
-            />
-            <!-- <span class="url-span">{{ videoLink }}</span> -->
-            <div class="flex gap-2">
-              <button
-                v-if="initialVideoLink !== videoLink"
-                @click="handleUpdateVideoLink"
-                class="trash-button"
-                type="button"
-              >
-                <i
-                  v-if="loadingUpdateVideo"
-                  class="pi pi-spinner animate-spin"
-                ></i>
-                <i v-else class="pi pi-check"></i>
-              </button>
-              <button
-                v-if="videoLink.length"
-                class="trash-button"
-                @click="removeVideoLink()"
-                type="button"
-              >
-                <i class="pi pi-times"></i>
-              </button>
+      <div class="upload-main-container-popup">
+        <div class="popup-content">
+          <div class="upload-first-container">
+            <div class="main-heading-wrapper">
+              <span class="main-heading-span">Video</span>
+            </div>
+            <div
+              class="bg-[#e3e3e3] flex gap-[12px] mx-[12px] my-[12px] pr-[12px] rounded"
+            >
+              <!-- <span>Video Link</span> -->
+              <input
+                type="text"
+                class="form-control custom_inputbox bg-transparent disabled:opacity-50!"
+                placeholder="Video Link"
+                v-model="videoLink"
+                :disabled="file.length"
+              />
+              <!-- <span class="url-span">{{ videoLink }}</span> -->
+              <div class="flex gap-2">
+                <button
+                  v-if="initialVideoLink !== videoLink"
+                  @click="handleUpdateVideoLink"
+                  class="trash-button"
+                  type="button"
+                >
+                  <i
+                    v-if="loadingUpdateVideo"
+                    class="pi pi-spinner animate-spin"
+                  ></i>
+                  <i v-else class="pi pi-check"></i>
+                </button>
+                <button
+                  v-if="videoLink.length"
+                  class="trash-button"
+                  @click="removeVideoLink()"
+                  type="button"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="line-break"></div>
-        </div>
-        <div>
-          <div class="main-heading-wrapper">
-            <span class="main-heading-span">Files</span>
+          <div class="flex items-center">
+            <hr class="flex-1" />
+            <span class="mx-2">OR</span>
+            <hr class="flex-1" />
           </div>
-          <div class="pdf_flex">
-            <div class="pdf-wrapper">
-              <div class="doc-span-wrapper check_flex">
-                <div
-                  v-for="(doc, index) in file"
-                  :key="index"
-                  style="display: flex; align-items: flex-start; gap: 12px"
-                >
-                  <input
-                    type="checkbox"
-                    class="check_box form-check"
-                    v-model="doc.selected"
-                  />
-                  <div class="document_check">
-                    <a
-                      :href="doc.file_url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <img src="/images/PDF.png" class="document-img" />
-                    </a>
-                    <span>{{ doc.file_name }}</span>
+          <div>
+            <div class="main-heading-wrapper">
+              <span class="main-heading-span">Files</span>
+            </div>
+            <div class="pdf_flex">
+              <div class="pdf-wrapper">
+                <div class="doc-span-wrapper check_flex">
+                  <div
+                    v-for="(doc, index) in file"
+                    :key="index"
+                    style="display: flex; align-items: flex-start; gap: 12px"
+                  >
+                    <input
+                      type="checkbox"
+                      class="check_box form-check"
+                      v-model="doc.selected"
+                    />
+                    <div class="document_check">
+                      <a
+                        :href="doc.file_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img src="/images/PDF.png" class="document-img" />
+                      </a>
+                      <span>{{ doc.file_name }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+              <input
+                type="file"
+                @change="handleFileChange"
+                ref="fileInput"
+                class="hidden-input"
+                multiple
+              />
+              <button
+                v-if="status == 0"
+                @click="triggerFileInput"
+                :disabled="videoLink.length"
+                class="bg-[#e3e3e3] py-1 px-2 rounded text-[12px]! w-[98px] disabled:opacity-50"
+                type="button"
+              >
+                <i
+                  v-if="loadingUploadAttachments"
+                  class="pi pi-spinner animate-spin"
+                ></i>
+                <div v-else class="flex gap-2 items-center whitespace-nowrap">
+                  <i class="pi pi-upload"></i>
+                  Upload File
+                </div>
+              </button>
+              <button
+                v-if="status == 0 && file.length > 0"
+                class="trash-button ml-2! mt-[2px]!"
+                @click="removeAttachments()"
+                type="button"
+              >
+                <i
+                  v-if="loadingRemoveAttachments"
+                  class="pi pi-spinner animate-spin"
+                ></i>
+                <i v-else class="pi pi-trash"></i>
+              </button>
             </div>
-            <input
-              type="file"
-              @change="handleFileChange"
-              ref="fileInput"
-              class="hidden-input"
-              multiple
-            />
-            <button
-              v-if="status == 0"
-              @click="triggerFileInput"
-              class="trash-button"
-              type="button"
-            >
-              <i
-                v-if="loadingUploadAttachments"
-                class="pi pi-spinner animate-spin"
-              ></i>
-              <i v-else class="pi pi-upload"></i>
-            </button>
-            <button
-              v-if="status == 0 && file.length > 0"
-              class="trash-button ml-2!"
-              @click="removeAttachments()"
-              type="button"
-            >
-              <i
-                v-if="loadingRemoveAttachments"
-                class="pi pi-spinner animate-spin"
-              ></i>
-              <i v-else class="pi pi-trash"></i>
-            </button>
           </div>
         </div>
-      </div>
-      <div class="text-end end_btn">
-        <button type="button" @click="closeEditPopup" class="cancel-btn">
-          Cancel
-        </button>
+        <div class="text-end end_btn">
+          <button type="button" @click="closeEditPopup" class="cancel-btn">
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
     <!-- Preview Popup -->
@@ -493,15 +441,17 @@
           <div class="main-heading-wrapper">
             <span class="main-heading-span">Video</span>
           </div>
-          <div class="link-wrapper">
+          <div class="link-wrapper my-[12px] mx-[12px] mb-[24px]">
             <a
+              v-if="videoLink"
               style="text-decoration: none"
               :href="videoLink"
               target="_blank"
-              >{{ videoLink }}</a
             >
+              {{ videoLink }}
+            </a>
+            <span v-else class="text-[#bdbdbd]">No video link...</span>
           </div>
-          <div class="line-break"></div>
         </div>
         <div>
           <div class="main-heading-wrapper">
@@ -569,14 +519,19 @@ import apiClient from "../router/axios";
 import Swal from "sweetalert2";
 import EditQuestionSheet from "../components/dialogs/EditQuestionSheet.vue";
 import PreviewQuestionSheet from "../components/dialogs/PreviewQuestionSheet.vue";
-import { useToast } from "../hooks/useToast";
 import axios from "axios";
-
-const { addToast } = useToast();
+import DropdownWithSearch from "../components/DropdownWithSearch.vue";
+import { inject } from "vue";
 
 export default {
+  setup() {
+    const showAlert = inject("showAlert");
+    return { showAlert };
+  },
   data() {
     return {
+      isAlertVisible: false,
+
       loadingUpdateVideo: false, // loading state for update video API
       loadingUploadAttachments: false, // loading state for upload attachments API
       loadingRemoveAttachments: false, // loading state for remove attachments API
@@ -642,7 +597,17 @@ export default {
   },
   methods: {
     validationCheck() {
-      console.log(this.selectAll);
+      if (
+        this.talkDetails.video_url.length === 0 &&
+        this.talkDetails.file_data.length === 0
+      ) {
+        this.showAlert({
+          title: "Validation Error",
+          description: "Please provide either video URL or PDF.",
+          type: "error",
+        });
+        return false;
+      }
       if (
         (this.submitType === "2" || this.submitType === "3") &&
         !this.selectAll &&
@@ -650,10 +615,10 @@ export default {
         !this.selectedRole.length &&
         !this.selectedUsers.length
       ) {
-        addToast({
+        this.showAlert({
           title: "Validation Error",
           description: "Please select at least one Department, Role, or User.",
-          type: "warning",
+          type: "error",
         });
         return false;
       }
@@ -694,7 +659,7 @@ export default {
           isLibrary: this.submitType,
         });
         this.getDetailsToolboxTalk();
-        addToast({
+        this.showAlert({
           title: "Success",
           description: "Toolbox Talk assigned successfully.",
           type: "success",
@@ -902,7 +867,6 @@ export default {
         this.initialVideoLink =
           this.talkDetails.video_url?.[0]?.video_url || "";
         this.status = response.data.talkDetails.status;
-        // TODO: change the file type to array from server side
         this.file = this.talkDetails.file_data;
         this.correctAnswers = this.talkDetails.number_of_correct_answer_to_pass;
         this.totalQuestions = this.talkDetails.number_of_questions_to_ask;
@@ -915,7 +879,6 @@ export default {
             correct_answer: ques.correct_answer?.[0]?.id === opt.id ? "1" : "0",
           })),
         }));
-        console.log(this.questionSheet);
         this.signOffSheet = this.talkDetails.assigned_users;
       } catch (error) {
         console.error("Error fetching toolbox talk:", error);
@@ -1651,19 +1614,8 @@ input.check_box.form-check {
 }
 
 .upload-first-container {
-  height: 150px;
   width: 760px;
   position: relative;
-}
-
-.link-wrapper {
-  display: flex;
-  padding-left: 10px;
-  gap: 25px;
-  height: 52px;
-  align-items: center;
-  color: #969696;
-  padding-right: 10px;
 }
 
 .placeholder {
@@ -1745,30 +1697,6 @@ input.check_box.form-check {
 
 .options-dropdown li.is-selected {
   font-weight: bold;
-}
-
-.selected-dept-main {
-  width: 85%;
-  justify-self: end;
-  display: flex;
-  flex-direction: row;
-  padding-left: 5px;
-  gap: 5px;
-  flex-wrap: wrap;
-  overflow-x: hidden;
-}
-
-.selected-users-main {
-  height: 50px;
-  overflow: auto;
-  width: 100%;
-  justify-self: end;
-  display: flex;
-  flex-direction: row;
-  padding-left: 5px;
-  gap: 5px;
-  flex-wrap: wrap;
-  overflow-x: hidden;
 }
 
 .selected-dept-span {

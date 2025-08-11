@@ -91,40 +91,15 @@
                   </span>
                 </div>
 
-                <div
-                  class="custom-dept"
-                  :class="selectAll && 'opacity-50'"
-                  id="custom-dept-select"
-                  @focusin="!selectAll ? toggleDropdownDepartment() : null"
-                  @focusout="closeDropdownDepartment"
-                  tabindex="0"
-                  @keydown.enter.space.prevent="toggleDropdownDepartment"
-                  @keydown.esc="closeDropdownDepartment"
-                >
-                  <div
-                    class="selected-display"
-                    :class="{ 'is-open': dropDownOpenDepartment }"
-                  >
-                    <span class="placeholder">
-                      Choose a responsible person or team
-                    </span>
-                    <span class="pi pi-angle-down"></span>
-                  </div>
-                  <div v-if="dropDownOpenDepartment" class="options-dropdown">
-                    <ul>
-                      <li
-                        v-for="department in departments"
-                        :key="department.id"
-                        @click="toggleDepartmentSelection(department)"
-                        :class="{
-                          'is-selected': isSelectedDepartment(department),
-                        }"
-                      >
-                        {{ department.name }}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                <DropdownWithSearch
+                  anchorClass="bg-[#ededed]"
+                  :options="
+                    departments.sort((a, b) => a.name.localeCompare(b.name))
+                  "
+                  v-model="selectedDepartment"
+                  :disabled="selectAll"
+                  placeholder="Choose a responsible person or team"
+                />
               </div>
             </div>
 
@@ -156,41 +131,13 @@
                   </span>
                 </div>
 
-                <div
-                  class="custom-dept"
-                  :class="selectAll && 'opacity-50'"
-                  tabindex="0"
-                  @focusin="!selectAll ? toggleDropdownRole() : null"
-                  @focusout="closeDropdownRole"
-                  @keydown.enter.space.prevent="toggleDropdownRole"
-                  @keydown.esc="closeDropdownRole"
-                  id="custom-role-select"
-                >
-                  <div
-                    class="selected-display"
-                    :class="{ 'is-open': dropDownOpenRole }"
-                    tabindex="0"
-                  >
-                    <span class="placeholder">
-                      Choose a responsible person or team
-                    </span>
-                    <span class="pi pi-angle-down"></span>
-                  </div>
-                  <div v-if="dropDownOpenRole" class="options-dropdown">
-                    <ul>
-                      <li
-                        v-for="role in roles"
-                        :key="role.id"
-                        @click="toggleRoleSelection(role)"
-                        :class="{
-                          'is-selected': isSelectedRole(role),
-                        }"
-                      >
-                        {{ role.name }}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                <DropdownWithSearch
+                  anchorClass="bg-[#ededed]"
+                  :options="roles.sort((a, b) => a.name.localeCompare(b.name))"
+                  v-model="selectedRole"
+                  :disabled="selectAll"
+                  placeholder="Choose a responsible person or team"
+                />
               </div>
             </div>
 
@@ -224,41 +171,13 @@
                     </button>
                   </span>
                 </div>
-                <div
-                  class="custom-dept"
-                  :class="selectAll && 'opacity-50'"
-                  @focusin="!selectAll ? openDropdownUsers() : null"
-                  @focusout="closeDropdownUsers"
-                  tabindex="0"
-                  @keydown.enter.space.prevent="openDropdownUsers"
-                  @keydown.esc="closeDropdownUsers"
-                  id="custom-user-select"
-                >
-                  <div
-                    class="selected-display"
-                    :class="{ 'is-open': dropDownOpenUsers }"
-                  >
-                    <span class="placeholder">
-                      Choose a responsible person or team
-                    </span>
-
-                    <span class="pi pi-angle-down"></span>
-                  </div>
-                  <div v-if="dropDownOpenUsers" class="options-dropdown">
-                    <ul>
-                      <li
-                        v-for="user in users"
-                        :key="user.id"
-                        @click="toggleUsersSelection(user)"
-                        :class="{
-                          'is-selected': isSelectedUsers(user),
-                        }"
-                      >
-                        {{ user.name }}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                <DropdownWithSearch
+                  anchorClass="bg-[#ededed]"
+                  :options="users.sort((a, b) => a.name.localeCompare(b.name))"
+                  v-model="selectedUsers"
+                  :disabled="selectAll"
+                  placeholder="Choose a responsible person or team"
+                />
               </div>
             </div>
           </div>
@@ -290,7 +209,7 @@
           </div>
 
           <div class="col-md-9 col-lg-8">
-            <div class="d-flex gap-4 align-items-center">
+            <div class="d-flex gap-2 align-items-center">
               <input
                 type="file"
                 @change="handleFileChange"
@@ -300,8 +219,12 @@
               />
               <button
                 class="cstmFormLinkBTN flex justify-center items-center gap-1"
+                :class="talkURL.length && 'opacity-50'"
                 type="button"
                 @click="triggerFileInput"
+                @dragover.prevent=""
+                @drop.prevent="handleFileDrop"
+                :disabled="talkURL.length"
               >
                 <p class="m-0 mt-1">Upload File</p>
                 <svg
@@ -318,14 +241,38 @@
                 </svg>
               </button>
 
-              <div class="cstmInputBox w-100">
+              <span class="text-[12px] font-bold text-[#6c6c6c]">OR</span>
+
+              <div class="cstmInputBox flex w-full bg-[#ededed] items-center">
                 <input
                   v-model="talkURL"
                   type="text"
                   class="form-control"
+                  :class="talkPdfs.length > 0 ? 'opacity-50' : ''"
                   id="Text3"
-                  placeholder="Add your link"
+                  placeholder="Add your video link"
+                  :disabled="talkPdfs.length"
                 />
+                <div v-if="talkURL.length > 0" class="mx-2">
+                  <i
+                    v-if="loadingValidateVideoURL"
+                    class="pi pi-spinner animate-spin"
+                  ></i>
+                  <div
+                    class="flex gap-[8px]"
+                    v-else-if="isVideoURLValid === true"
+                  >
+                    <i class="fa fa-check text-green-600"></i>
+                    <i
+                      class="pi pi-play-circle cursor-pointer"
+                      @click="isPreviewVideoVisible = true"
+                    ></i>
+                  </div>
+                  <i
+                    v-else-if="isVideoURLValid === false"
+                    class="fa fa-times text-red-600"
+                  ></i>
+                </div>
               </div>
             </div>
             <div class="selected-file-main">
@@ -377,7 +324,9 @@
         </div>
 
         <div class="footerBtnbox mt-5">
-          <button class="cstmFormLinkBTN">Cancel</button>
+          <button class="cstmFormLinkBTN" type="button" @click="clearAll">
+            Cancel
+          </button>
 
           <button
             class="cstmFormLinkBTN cstmprimaryBTN flex items-center justify-center h-[35px]"
@@ -398,9 +347,9 @@
               <SelectPortal>
                 <SelectContent
                   position="popper"
-                  class="min-w-[160px] bg-black/10 mt-1 rounded will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade z-[100]"
+                  class="min-w-[160px] font-sans bg-black/10 mt-1 rounded will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade z-[100]"
                 >
-                  <SelectViewport class="px-[15px] py-1 space-y-1">
+                  <SelectViewport class="px-[15px] py-1">
                     <SelectItem
                       value="3"
                       class="text-[13px] leading-none rounded-[3px] flex items-center h-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-green9 data-[highlighted]:text-green1"
@@ -488,15 +437,49 @@
       </div>
     </div>
   </div>
+  <DialogRoot v-model:open="isPreviewVideoVisible">
+    <DialogPortal>
+      <DialogOverlay class="fixed inset-0 bg-black/75 z-30" />
+      <DialogContent
+        class="flex flex-col gap-[16px] fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 bg-white z-30 outline-none p-3 rounded"
+      >
+        <DialogTitle class="font-sans text-[24px]!">Preview Video</DialogTitle>
+        <!-- <video controls>
+          <source :src="talkURL" />
+        </video> -->
+        <video-player
+          width="800"
+          :options="{
+            autoplay: true,
+            controls: true,
+            sources: [
+              {
+                type: videoType,
+                src: talkURL,
+              },
+            ],
+          }"
+        />
+        <div class="flex justify-end">
+          <DialogClose class="px-[50px] py-[4px] rounded bg-[#bdbdbd]"
+            >Close</DialogClose
+          >
+        </div>
+      </DialogContent>
+    </DialogPortal>
+  </DialogRoot>
 </template>
 
 <script>
 import apiClient from "../router/axios";
-import Swal from "sweetalert2";
 import "primeicons/primeicons.css";
 import {
+  DialogContent,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
   SelectContent,
-  SelectIcon,
   SelectItem,
   SelectItemText,
   SelectPortal,
@@ -507,25 +490,28 @@ import {
 } from "radix-vue";
 import axios from "axios";
 import DatePicker from "../components/DatePicker.vue";
-import { useToast } from "../hooks/useToast";
-import moment from "moment";
 import CreateQuestionSheet from "../components/dialogs/CreateQuestionSheet.vue";
-
-const { addToast } = useToast();
+import DropdownWithSearch from "../components/DropdownWithSearch.vue";
+import { inject } from "vue";
 
 export default {
+  setup() {
+    const showAlert = inject("showAlert");
+    return { showAlert };
+  },
   components: {},
   data() {
     return {
-      // loading state for create API
-      loading: false,
+      loading: false, // loading state for create API
+      loadingValidateVideoURL: false, // loading state for validate video URL logic
+      timeout: null, // timeout for debouncing the video url validation
+      isVideoURLValid: null, // flag to check if the video URL is valid
+      videoType: "video/mp4", // default video type
+      isPreviewVideoVisible: false, // flag to check if the preview video is visible
       questionSelectError: false,
       questionError: "",
       questionNumberSelectError: false,
       submitPopUp: false,
-      dropDownOpenDepartment: false,
-      dropDownOpenRole: false,
-      dropDownOpenUsers: false,
       selectedUsers: [],
       buttonValue: "Add",
       selectedDepartment: [],
@@ -573,9 +559,91 @@ export default {
         this.selectedUsers = [];
       },
     },
+    talkURL: {
+      handler(val) {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => {
+          this.validateVideoURL(val);
+        }, 1000);
+      },
+    },
   },
 
   methods: {
+    clearAll() {
+      this.$router.go();
+      this.talkDescription = "";
+      this.selectedDepartment = [];
+      this.selectedRole = [];
+      this.selectedUsers = [];
+      this.talkTitle = "";
+      this.talkURL = "";
+      this.talkPdfs = [];
+      this.talkDueDate = null;
+      this.attemptQuestions = "";
+      this.selectAll = false;
+
+      this.correctAnswers = "";
+      this.totalQuestions = "";
+      this.questions = [];
+    },
+    async validateVideoURL(videoUrl) {
+      try {
+        this.isVideoURLValid = null;
+        if (!videoUrl.length) return;
+
+        this.loadingValidateVideoURL = true;
+
+        const urlRegex =
+          /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
+        const youtubeRegex =
+          /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))((?:\w|-){11})(?:\S+)?$/;
+
+        if (!urlRegex.test(videoUrl)) throw new Error("Video URL is invalid");
+
+        const isYoutubeVideo = youtubeRegex.test(videoUrl);
+
+        if (isYoutubeVideo) {
+          this.videoType = "video/youtube";
+          this.isVideoURLValid = true;
+        } else {
+          const res = await axios(videoUrl);
+          if (
+            !res.headers["content-type"] ||
+            !res.headers["content-type"].startsWith("video/")
+          )
+            throw new Error("Content type is not video");
+
+          this.videoType = res.headers["content-type"];
+          this.isVideoURLValid = true;
+        }
+        setTimeout(() => {
+          this.isPreviewVideoVisible = true;
+        }, 1000);
+      } catch (err) {
+        this.isVideoURLValid = false;
+      }
+      this.loadingValidateVideoURL = false;
+    },
+    handleFileDrop(ev) {
+      ev.preventDefault();
+
+      if (ev.dataTransfer.items) {
+        // Use DataTransferItemList interface to access the file(s)
+        [...ev.dataTransfer.items].forEach((item, i) => {
+          // If dropped items aren't files, reject them
+          if (item.kind === "file") {
+            const file = item.getAsFile();
+            this.talkPdfs.push(file);
+          }
+        });
+      } else {
+        // Use DataTransfer interface to access the file(s)
+        [...ev.dataTransfer.files].forEach((file, i) => {
+          this.talkPdfs.push(this.talkPdfs);
+        });
+      }
+    },
     handleCreateQuestionSheet(
       filledQuestions,
       questionsToAskCount,
@@ -679,6 +747,7 @@ export default {
       for (const file of e.target.files) {
         this.talkPdfs.push(file);
       }
+      e.target.value = "";
     },
 
     removeUploadedFile(idx) {
@@ -888,35 +957,52 @@ export default {
 
     validationCheck() {
       // if (!moment(this.talkDueDate).isValid()) {
-      //   addToast({
+      //   this.showAlert({
       //     title: "Validation Error",
       //     description: "Please enter correct Due Date.",
-      //     type: "warning",
+      //     type: "error",
       //   });
       //   return false;
       // }
       if (!this.talkTitle.length) {
-        addToast({
+        this.showAlert({
           title: "Validation Error",
           description: "Please enter Talk Title.",
-          type: "warning",
+          type: "error",
         });
         return false;
       }
-
-      if (
-        (this.isLibrary === "2" || this.isLibrary === "3") &&
-        !this.selectAll &&
-        !this.selectedDepartment.length &&
-        !this.selectedRole.length &&
-        !this.selectedUsers.length
-      ) {
-        addToast({
-          title: "Validation Error",
-          description: "Please select at least one Department, Role, or User.",
-          type: "warning",
-        });
-        return false;
+      if (this.isLibrary === "2" || this.isLibrary === "3") {
+        if (
+          !this.selectAll &&
+          !this.selectedDepartment.length &&
+          !this.selectedRole.length &&
+          !this.selectedUsers.length
+        ) {
+          this.showAlert({
+            title: "Validation Error",
+            description:
+              "Please select at least one Department, Role, or User.",
+            type: "error",
+          });
+          return false;
+        }
+        if (this.talkURL.length === 0 && this.talkPdfs.length === 0) {
+          this.showAlert({
+            title: "Validation Error",
+            description: "Please provide either video URL or PDF.",
+            type: "error",
+          });
+          return false;
+        }
+        if (this.isVideoURLValid === false) {
+          this.showAlert({
+            title: "Validation Error",
+            description: "Please enter valid video URL.",
+            type: "error",
+          });
+          return false;
+        }
       }
       return true;
     },
@@ -976,7 +1062,7 @@ export default {
         }, 2000);
       } catch (error) {
         console.log(error);
-        addToast({
+        this.showAlert({
           title: "Submission Failed",
           description: error.response?.data?.message
             ? error.response?.data?.message ===

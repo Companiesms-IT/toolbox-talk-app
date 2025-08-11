@@ -10,10 +10,9 @@ import {
   RadioGroupItem,
   RadioGroupRoot,
 } from "radix-vue";
-import Dropdown from "../dropdown.vue";
-import { reactive, ref, watch } from "vue";
+import Dropdown from "../Dropdown.vue";
+import { inject, nextTick, ref, useTemplateRef, watch } from "vue";
 import apiClient from "../../router/axios";
-import { useToast } from "../../hooks/useToast";
 
 const {
   questions,
@@ -32,29 +31,33 @@ const {
 
 const questionsToAskCount = ref(initialQuestionsToAskCount);
 const correctAnswersRequiredCount = ref(initialCorrectAnswersRequiredCount);
+const questionsDiv = useTemplateRef("questionsDiv");
+
 const updatedQuestions = ref(questions);
 const newQuestions = ref([]);
 const loadingSaveQuestions = ref(false);
 const openDialog = ref(false);
 
-const { addToast } = useToast();
+const showAlert = inject("showAlert");
 
 const handleDeleteNewQuestion = (idx) => {
   newQuestions.value.splice(idx, 1);
 };
 
-const handleAddNewQuestion = () => {
-  if (updatedQuestions.value.length + newQuestions.value.length < 10)
-    newQuestions.value.push({
-      name: "",
-      options: ["", "", "", ""],
-      correctAnswer: "",
-    });
+const handleAddNewQuestion = async () => {
+  if (updatedQuestions.value.length + newQuestions.value.length >= 10) return;
+  newQuestions.value.push({
+    name: "",
+    options: ["", "", "", ""],
+    correctAnswer: "",
+  });
+  await nextTick();
+  questionsDiv.value.at(-1).scrollIntoView({ behavior: "smooth" });
 };
 
 const validationCheck = () => {
   if (!questionsToAskCount.value) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "Please select the number of questions to ask",
       type: "error",
@@ -62,7 +65,7 @@ const validationCheck = () => {
     return false;
   }
   if (!correctAnswersRequiredCount.value) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "Please select the number of correct answers required",
       type: "error",
@@ -73,7 +76,7 @@ const validationCheck = () => {
     questionsToAskCount.value >
     newQuestions.value.length + updatedQuestions.value.length
   ) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "You have selected more questions than you have created",
       type: "error",
@@ -84,7 +87,7 @@ const validationCheck = () => {
     correctAnswersRequiredCount.value >
     newQuestions.value.length + updatedQuestions.value.length
   ) {
-    addToast({
+    showAlert({
       title: "Error",
       description:
         "You have selected more correct answers than you have created",
@@ -94,7 +97,7 @@ const validationCheck = () => {
   }
 
   if (correctAnswersRequiredCount.value > questionsToAskCount.value) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "You have selected more correct answers than questions",
       type: "error",
@@ -103,7 +106,7 @@ const validationCheck = () => {
   }
 
   if (newQuestions.value.some((ques) => ques.name.length === 0)) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "Please enter a question name",
       type: "error",
@@ -115,7 +118,7 @@ const validationCheck = () => {
       (ques) => ques.options[0].length === 0 || ques.options[1].length === 0
     )
   ) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "Please fill atleast two options for each question",
       type: "error",
@@ -127,7 +130,7 @@ const validationCheck = () => {
       (ques) => !ques.correctAnswer || ques.correctAnswer.length === 0
     )
   ) {
-    addToast({
+    showAlert({
       title: "Error",
       description: "Please select the correct answer for each question",
       type: "error",
@@ -150,7 +153,7 @@ const handleSave = async () => {
     });
     await getDetailsToolboxTalk();
     newQuestions.value = [];
-    addToast({
+    showAlert({
       title: "Success",
       description: "Questions saved successfully.",
       type: "success",
@@ -193,7 +196,7 @@ watch(
     <DialogPortal>
       <DialogOverlay class="bg-black/75 fixed inset-0 z-40" />
       <DialogContent
-        class="z-50 font-sans fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg w-[800px] flex flex-col gap-3"
+        class="z-40 font-sans fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg w-[800px] flex flex-col gap-3"
       >
         <div class="rounded-full py-2 px-3 bg-[#afb0f5] font-bold">
           Edit question sheet
@@ -263,7 +266,7 @@ watch(
                 <input
                   v-model="question.name"
                   placeholder="Question"
-                  class="bg-[#eee] flex-1 px-2 rounded-sm"
+                  class="bg-[#eee] flex-1 px-2 rounded-sm outline-none"
                 />
               </div>
               <div
@@ -292,8 +295,8 @@ watch(
                 </div>
                 <input
                   v-model="option.name"
-                  placeholder="Write Choice 1"
-                  class="bg-[#eee] flex-1 px-2 rounded-sm"
+                  :placeholder="`Write Choice ${optionIdx + 1}`"
+                  class="bg-[#eee] flex-1 px-2 rounded-sm outline-none"
                 />
               </div>
             </RadioGroupRoot>
@@ -304,6 +307,7 @@ watch(
           </div>
 
           <div
+            ref="questionsDiv"
             v-for="(question, questionIdx) of newQuestions"
             class="flex gap-3 border-b border-[#e1e1e1] py-2"
           >
@@ -319,7 +323,7 @@ watch(
                 <input
                   v-model="question.name"
                   placeholder="Question"
-                  class="bg-[#eee] flex-1 px-2 rounded-sm"
+                  class="bg-[#eee] flex-1 px-2 rounded-sm outline-none"
                 />
               </div>
               <div
@@ -348,8 +352,8 @@ watch(
                 </div>
                 <input
                   v-model="question.options[optionIdx]"
-                  placeholder="Write Choice 1"
-                  class="bg-[#eee] flex-1 px-2 rounded-sm"
+                  :placeholder="`Write Choice ${optionIdx + 1}`"
+                  class="bg-[#eee] flex-1 px-2 rounded-sm outline-none"
                 />
               </div>
             </RadioGroupRoot>

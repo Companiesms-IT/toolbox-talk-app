@@ -12,6 +12,8 @@ import CMSPage from "../pages/CMSPage.vue";
 import CMSLibraryPage from "../pages/CMSLibraryPage.vue";
 import AssignedToolbox from "../pages/AssignedToolbox.vue";
 import CompanyLibraryToolbox from "../pages/CompanyLibraryToolbox.vue";
+import AssignedToMeDetailPage from "../pages/AssignedToMeDetailPage.vue";
+import AttemptQuestions from "../pages/AttemptQuestions.vue";
 
 const routes = [
   {
@@ -51,7 +53,12 @@ const routes = [
           {
             path: "assigned-to-me/:id",
             name: "update-attachments",
-            component: UpdatesAndAttachments,
+            component: AssignedToMeDetailPage,
+          },
+          {
+            path: "assigned-to-me/:id/attempt-questions",
+            name: "attempt-questions",
+            component: AttemptQuestions,
           },
         ],
       },

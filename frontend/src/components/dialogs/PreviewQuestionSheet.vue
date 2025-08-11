@@ -30,7 +30,7 @@ console.log(props.questions);
     <DialogPortal>
       <DialogOverlay class="bg-black/75 fixed inset-0 z-40" />
       <DialogContent
-        class="z-50 font-sans fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg w-[800px] flex flex-col gap-3"
+        class="z-40 font-sans fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg w-[800px] flex flex-col gap-3"
       >
         <div class="rounded-full py-2 px-3 bg-[#afb0f5] font-bold">
           Question Sheet
@@ -78,7 +78,10 @@ console.log(props.questions);
           >
             <RadioGroupRoot
               disabled
-              :model-value="question.correct_answer"
+              :model-value="
+                question.options.find((option) => option.correct_answer === '1')
+                  ?.id
+              "
               class="flex flex-1 flex-col gap-2"
             >
               <div class="flex gap-4">
@@ -98,7 +101,7 @@ console.log(props.questions);
               >
                 <div class="flex gap-1 min-w-16 justify-end items-center">
                   <RadioGroupItem
-                    :value="String.fromCharCode(65 + optionIdx)"
+                    :value="option.id"
                     class="w-[18px] h-[18px] border rounded-full!"
                     :id="`A`"
                   >

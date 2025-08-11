@@ -18,39 +18,17 @@
             </router-link>
           </div>
 
-          <DropdownMenuRoot>
-            <DropdownMenuTrigger>
+          <div class="flex gap-2">
+            <router-link :to="{ name: 'toolbox-talks-library' }">
+              <button class="bg-white text-black cstmprimaybtn">Library</button>
+            </router-link>
+
+            <router-link :to="{ name: 'create-new-talk' }">
               <button class="cstmprimaybtn">
                 Create Toolbox<i class="fa-solid fa-plus ms-1"></i>
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuContent
-                class="bg-white rounded-[8px] mt-2 me-4 p-2 space-y-[2px] shadow"
-              >
-                <DropdownMenuItem
-                  class="cursor-pointer hover:bg-gray-100 h-[32px] flex items-center p-[8px] rounded-[4px] font-sans"
-                >
-                  <router-link
-                    class="no-underline! text-black"
-                    :to="{ name: 'create-new-talk' }"
-                  >
-                    Create Toolbox talk
-                  </router-link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  class="cursor-pointer hover:bg-gray-100 h-[32px] flex items-center p-[8px] rounded-[4px] font-sans"
-                >
-                  <router-link
-                    class="no-underline! text-black"
-                    to="/toolbox-library"
-                  >
-                    Use Library Template
-                  </router-link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenuPortal>
-          </DropdownMenuRoot>
+            </router-link>
+          </div>
         </div>
 
         <form @submit.prevent="applyFilter" class="filterFormBox">
@@ -246,14 +224,6 @@
 <script>
 import apiClient from "../router/axios";
 import Swal from "sweetalert2";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuRoot,
-  DropdownMenuTrigger,
-} from "radix-vue";
-import moment from "moment";
 import DatePicker from "../components/DatePicker.vue";
 
 export default {

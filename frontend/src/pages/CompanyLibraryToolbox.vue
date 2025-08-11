@@ -20,7 +20,11 @@
                 CMS Library
               </button>
             </div>
-            <div class="template-count">{{ templates.length }} Templates</div>
+            <!-- TODO: fix this when CMS library is implemented -->
+            <div class="template-count">
+              {{ currentTab === "assignedToMe" ? 0 : templates.length }}
+              Templates
+            </div>
           </div>
 
           <div class="filterFormBox justify-content-between">
@@ -72,12 +76,17 @@
                   @click="selectTemplate(template)"
                   @dblclick="goToDetailPage(template.id)"
                 >
-                  <div class="template-item flex flex-col items-center">
+                  <div
+                    class="template-item flex flex-col items-center p-2! rounded transition-all"
+                    :class="
+                      selectedTemplate?.id === template.id ? 'bg-[#cdcdcd]' : ''
+                    "
+                  >
                     <input
                       :checked="tickedTemplates.includes(template.id)"
                       @change="toggleTickTemplate(template.id)"
                       type="checkbox"
-                      class="template-checkbox"
+                      class="template-checkbox m-2"
                     />
                     <svg
                       width="80"
@@ -281,6 +290,7 @@ export default {
         });
         await this.fetchToolboxTalks();
         this.tickedTemplates = [];
+        this.selectedTemplate = null;
       } catch (err) {
         console.error(err);
       }
@@ -321,10 +331,12 @@ export default {
               talk.number_of_correct_answer_to_pass,
             file: talk.file,
             description: talk.description || "No description available",
-            createdBy: talk.get_created_by_user.name,
+            createdBy: talk.get_created_by_user?.name || "",
             creationDate: this.formatDate(talk.created_at),
             lastUpdated: this.formatDate(talk.updated_at),
-            supportingFiles: talk.attachments_pdf_data_count,
+            supportingFiles:
+              talk.attachments_pdf_data_count ||
+              talk.attachments_videos_data_count,
             hasQuestionSheet: talk.number_of_questions_to_ask > 0,
           }));
           const { current_page, last_page } = response.data.toolboxTalks.meta;

@@ -934,7 +934,6 @@ export default {
         this.talkDetails = response.data.assignToMeToolboxTalks;
         this.videoLink = this.talkDetails?.video_url?.[0]?.video_url || "";
         this.status = response.data.assignToMeToolboxTalks.status;
-        // TODO: change the file type to array from server side
         this.file = this.talkDetails?.file || [];
         this.correctAnswers =
           this.talkDetails?.number_of_correct_answer_to_pass;
