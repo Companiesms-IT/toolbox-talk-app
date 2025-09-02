@@ -13,9 +13,13 @@
       <div class="details-wrapper">
         <div class="details-main-wrapper">
           <EditableText
+            v-if="status == 0"
             :value="talkDetails.title"
             @submit="handleEditTitleSubmit"
           />
+          <span class="text-[32px] font-bold px-4 text-center" v-else>{{
+            talkDetails.title
+          }}</span>
 
           <span class="createdByHeading"
             >Created by {{ talkDetails.created_by_user?.name }}
@@ -28,9 +32,23 @@
         </div>
 
         <EditableTextarea
+          v-if="status == 0"
           :value="talkDetails.description"
           @submit="handleEditDescriptionSubmit"
         />
+        <div
+          v-else
+          class="flex flex-col w-full min-h-[210px] rounded-[10px] p-[10px] gap-[30px] bg-[#f4f4f4] description-main-wrapper"
+        >
+          <div class="flex gap-3 items-center">
+            <span class="bottom-des">Description</span>
+          </div>
+          <div class="text-black w-full!">
+            <span class="text-[12px] whitespace-normal!">{{
+              talkDetails.description
+            }}</span>
+          </div>
+        </div>
       </div>
     </div>
     <div class="right-side-main-container">
