@@ -14,9 +14,10 @@ class ToolBoxOptionsResource extends JsonResource
      */
     public function toArray($request)
     {
+        // return parent::toArray($request);
         return [
-            'id'    => isset($this->id) ? $this->id : null,
-            'name'  => isset($this->name) ? $this->name : null
+            'id'    => $this->id,
+            'name'  => $this->name
         ];
     }
 }

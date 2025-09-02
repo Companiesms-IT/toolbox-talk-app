@@ -22,7 +22,7 @@ class CreateAttemptQuestionsTable extends Migration
             $table->enum('is_correct',['1','2'])->nullable();
             $table->integer('attempt_count')->nullable();
             $table->timestamps();
-            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('question_id')->references('id')->on('questions')->onDelete('cascade');
             $table->foreign('toolbox_talk_id')->references('id')->on('toolbox_talks')->onDelete('cascade');
         });

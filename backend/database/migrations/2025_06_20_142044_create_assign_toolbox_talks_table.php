@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('assign_toolbox_talks', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('role_id')->nullable(); 
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade'); 
+            $table->unsignedBigInteger('role_id')->nullable();
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
             $table->unsignedBigInteger('permission_id')->nullable();
             $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
-            $table->unsignedBigInteger('toolbox_talk_id')->nullable();
             $table->longText('user_name')->nullable();
+            $table->unsignedBigInteger('toolbox_talk_id')->nullable();
             $table->foreign('toolbox_talk_id')->references('id')->on('toolbox_talks')->onDelete('cascade');
-            $table->date('due_date')->nullable(); 
+            $table->date('due_date')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->enum('status', ['1', '2', '3', '4'])->default('3')->comment('1: Ended, 2: Completed, 3: Ongoing, 4: Acknowledged');
+            $table->enum('status', ['1', '2', '3'])->default('3')->comment('1: Ended, 2: Completed, 3: Ongoing');
             $table->string('result')->nullable();
             $table->integer('attempt_count')->nullable();
             $table->string('date_time')->nullable();

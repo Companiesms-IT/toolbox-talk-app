@@ -9,7 +9,7 @@ use App\Models\ToolboxTalk;
 class ExistsOrSoftDeletedRequest implements ValidationRule
 {
     protected $modelClass;
-    
+
     public function __construct(string $model)
     {
         $this->modelClass = $model;
@@ -22,7 +22,7 @@ class ExistsOrSoftDeletedRequest implements ValidationRule
      * @param  Closure $fail
      * @return void
      */
-    
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         // Check if the record exists and is not soft deleted
@@ -30,7 +30,7 @@ class ExistsOrSoftDeletedRequest implements ValidationRule
         // $checkIdExistOrNot = $this->modelClass::where('id', $value)->orWhere('deleted_at', '<>', null)->exists();
         if (!$checkIdExistOrNot) {
             $fail('The selected ID is invalid.');
-        } 
+        }
         // elseif ($checkIdExistOrNot->trashed()) {
         //     $fail('The selected ID has been soft deleted.');
         // }

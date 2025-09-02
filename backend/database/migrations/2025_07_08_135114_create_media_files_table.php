@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('media_files', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
-            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('toolbox_talk_id')->nullable();
             $table->foreign('toolbox_talk_id')->references('id')->on('toolbox_talks')->onDelete('cascade');
             $table->longText('file_name')->nullable();

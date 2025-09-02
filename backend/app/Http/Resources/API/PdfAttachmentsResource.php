@@ -14,13 +14,18 @@ class PdfAttachmentsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // $parts = explode('/', $this['file_name']);
+        // // dd($parts, "ds;fkdsl;f");
+        // if (count($parts) > 2) {
+        //     $fileName = implode('/', array_slice($parts, 2));
+        // } else {
+        //     $fileName = null;
+        // }    
         return [
-            'id'                => isset($this['id']) ?  $this['id'] : null,
-            'toolbox_talk_id'   => isset($this['toolbox_talk_id']) ? $this['toolbox_talk_id'] : null,
-            'file_url'          => isset($this['file_path']) ? url($this['file_path']) : null,
-            'file_name'         => isset($this['file_name']) ? $this['file_name'] : null,
-            'file_status'       => isset($this['file_status']) ? $this['file_status'] : null,
-            'file_state'       =>  isset($this['file_state']) ? $this['file_state']  : 'In Progress',
+            'id'                => $this['id'],
+            'toolbox_talk_id'   => $this['toolbox_talk_id'],
+            'file_url'          => url($this['file_path']),
+            'file_name'         => $this['file_name'],
         ];
     }
 }
