@@ -13,13 +13,10 @@
         >
           <i class="fa-solid fa-chevron-left"></i>
         </div>
-        <a href="javascript:void(0)" class="iconBTN">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i>
-        </a>
       </div>
       <div class="details-wrapper">
         <div class="details-main-wrapper">
-          <span class="mianHeading">{{ talkDetails?.title }}</span>
+          <span class="mianHeading px-4">{{ talkDetails?.title }}</span>
           <span class="createdByHeading"
             >Created by
             {{ talkDetails?.created_by }}
@@ -90,8 +87,15 @@
             ref="videoPlayer"
             class="w-full! aspect-video h-full! max-w-[960px]"
             @ended="handleVideoEnded"
+            controls
             :options="
               videoLink && {
+                controlBar: {
+                  remainingTimeDisplay: {
+                    displayNegative: false,
+                  },
+                  progressControl: videoLink && videoLink.video_status == 1,
+                },
                 sources: [
                   {
                     type: videoLink?.type,
@@ -101,30 +105,6 @@
               }
             "
           >
-            <template v-slot="{ player, state }">
-              <div
-                class="absolute w-full h-full flex items-center justify-center group"
-              >
-                <button
-                  v-if="state.playing"
-                  class="group-hover:opacity-100! opacity-0 transition-all text-white bg-[#bdbdbd30]! border-2! border-white rounded-full! aspect-square p-2"
-                >
-                  <i
-                    class="pi pi-pause fill-white text-lg"
-                    @click="player.pause()"
-                  ></i>
-                </button>
-                <button
-                  v-else
-                  class="text-white bg-[#bdbdbd30]! border-2! border-white rounded-full! aspect-square p-2"
-                >
-                  <i
-                    class="pi pi-play translate-x-[2px] fill-white text-lg"
-                    @click="player.play()"
-                  ></i>
-                </button>
-              </div>
-            </template>
           </video-player>
         </div>
         <!-- For PDF attachments -->
@@ -139,7 +119,7 @@
               @click="() => (selectedPDFIdx = pdfIdx)"
             >
               <i
-                v-if="pdf.status"
+                v-if="pdf.file_status == 1"
                 class="pi pi-check text-green-600 absolute top-2 left-2"
               ></i>
               <img
@@ -301,10 +281,15 @@ export default {
   watch: {
     file: {
       handler(pdfs) {
-        if (pdfs.length && !pdfs.some((file) => !file.status))
+        if (pdfs.length && !pdfs.some((file) => file.file_status != 1))
           this.disableStartButton = false;
       },
       deep: true,
+    },
+    videoLink: {
+      handler(video) {
+        if (video && video.video_status == 1) this.disableStartButton = false;
+      },
     },
     talkDetails: {
       handler({ result_data }) {
@@ -317,15 +302,46 @@ export default {
   },
   mounted() {
     this.getAssignedToMeById();
-    this.getRolesAndPermission();
   },
   methods: {
+    async checkAttachmentsStatus() {
+      try {
+        const { data } = await apiClient.post("/video-pdf-status", {
+          toolbox_talk_id: $route.params.id,
+        });
+        if (data.vorfstatus === 1) {
+          this.disableStartButton = false;
+        }
+      } catch (err) {}
+    },
+    handleVideoEnded() {
+      if (this.videoLink) {
+        this.updateAttachmentStatus("Video", this.videoLink.id);
+        this.disableStartButton = false;
+      }
+    },
+    // type can be Video / Pdf
+    async updateAttachmentStatus(type, id) {
+      try {
+        await apiClient.post("/update-video-pdf-status", {
+          ...(type === "Video" ? { video_id: id } : { file_id: id }),
+          toolbox_talk_id: this.$route.params.id,
+          type,
+          status: 1,
+        });
+        this.getAssignedToMeById();
+        this.checkAttachmentsStatus();
+      } catch (err) {
+        console.log(err);
+      }
+    },
     handlePDFScroll(e) {
       if (
         e.target.scrollHeight <
         e.target.scrollTop + e.target.clientHeight + 100
-      )
-        this.file[this.selectedPDFIdx].status = true;
+      ) {
+        this.updateAttachmentStatus("Pdf", this.file[this.selectedPDFIdx].id);
+      }
     },
     async handleConfirmAcknowledge() {
       try {
@@ -358,11 +374,6 @@ export default {
         ],
       });
     },
-
-    handleVideoEnded() {
-      if (this.videoLink) this.disableStartButton = false;
-    },
-    // type can be Video / PDF
 
     toggleUsersSelection(userName) {
       if (this.isSelectedUsers(userName)) {
@@ -433,21 +444,6 @@ export default {
     },
     toggleDropdownUsers() {
       this.dropDownOpenUsers = !this.dropDownOpenUsers;
-    },
-
-    async getRolesAndPermission() {
-      try {
-        const response = await apiClient.get("/roles-permissions-users");
-        this.roles = response.data.roles;
-        this.permissions = response.data.permissions;
-        this.users = response.data.users;
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Could not fetch roles and permissions",
-        });
-      }
     },
 
     async getAssignedToMeById() {

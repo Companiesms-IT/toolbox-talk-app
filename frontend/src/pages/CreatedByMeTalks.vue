@@ -52,6 +52,7 @@
               <option value="">Status</option>
               <option value="0">Unassigned</option>
               <option value="1">Assigned</option>
+              <option value="2">Ended</option>
             </select>
           </div>
           <div class="flex gap-1 items-center">
@@ -59,6 +60,7 @@
               <DatePicker
                 fieldClass="h-[38px] bg-[#cccccd]"
                 v-model="startDate"
+                :disableAfter="endDate"
               />
             </div>
             <i class="pi pi-minus text-[8px]"></i>
@@ -66,6 +68,7 @@
               <DatePicker
                 fieldClass="h-[38px] bg-[#cccccd]"
                 v-model="endDate"
+                :disableBefore="startDate"
               />
             </div>
           </div>
@@ -165,7 +168,10 @@
                     <span v-else> N/A </span>
                   </td>
                   <td @click="showTalkDetails(talk)" class="status-style">
-                    <span v-if="talk.status === '1'" class="StatusSuccess"
+                    <span v-if="talk.status === '2'" class="StatusSuccess"
+                      >Assigned</span
+                    >
+                    <span v-else-if="talk.status === '1'" class="StatusSuccess"
                       >Assigned</span
                     >
                     <span v-else-if="talk.status === '0'" class="StatusOngoing"

@@ -60,6 +60,7 @@
               <DatePicker
                 fieldClass="h-[38px] bg-[#cccccd]"
                 v-model="startDate"
+                :disableAfter="endDate"
               />
             </div>
             <i class="pi pi-minus text-[8px]"></i>
@@ -68,6 +69,7 @@
               <DatePicker
                 fieldClass="h-[38px] bg-[#cccccd]"
                 v-model="endDate"
+                :disableBefore="startDate"
               />
             </div>
           </div>

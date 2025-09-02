@@ -23,7 +23,14 @@ import {
 import { cn } from "../lib/utils";
 import moment from "moment";
 
-defineProps(["fieldClass", "disableBeforeToday"]);
+const { disableAfter } = defineProps([
+  "fieldClass",
+  "disableBeforeToday",
+  "readonly",
+  "disabled",
+  "disableBefore",
+  "disableAfter",
+]);
 
 const model = defineModel();
 </script>
@@ -32,11 +39,18 @@ const model = defineModel();
   <DatePickerRoot
     id="date-field"
     locale="en-GB"
+    class="font-sans"
     v-model:model-value="model"
+    :readonly="readonly"
+    :disabled="disabled"
     :is-date-disabled="
       (date) =>
-        moment(date.toDate()).add(1, 'day').isBefore(moment.now()) &&
-        disableBeforeToday
+        (moment(date.toDate()).add(1, 'day').isBefore(moment.now()) &&
+          disableBeforeToday) ||
+        (!!disableBefore &&
+          moment(date.toDate()).add(1, 'months').isBefore(disableBefore)) ||
+        (!!disableAfter &&
+          moment(date.toDate()).add(1, 'months').isAfter(disableAfter))
     "
   >
     <DatePickerField
@@ -71,7 +85,7 @@ const model = defineModel();
 
     <DatePickerContent
       :side-offset="4"
-      class="rounded-xl bg-white shadow-[0_10px_38px_-10px_hsla(206,22%,7%,.35),0_10px_20px_-15px_hsla(206,22%,7%,.2)] focus:shadow-[0_10px_38px_-10px_hsla(206,22%,7%,.35),0_10px_20px_-15px_hsla(206,22%,7%,.2),0_0_0_2px_theme(colors.green7)] will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
+      class="rounded-xl font-sans bg-white shadow-[0_10px_38px_-10px_hsla(206,22%,7%,.35),0_10px_20px_-15px_hsla(206,22%,7%,.2)] focus:shadow-[0_10px_38px_-10px_hsla(206,22%,7%,.35),0_10px_20px_-15px_hsla(206,22%,7%,.2),0_0_0_2px_theme(colors.green7)] will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
     >
       <DatePickerArrow class="fill-white" />
       <DatePickerCalendar v-slot="{ weekDays, grid }" class="p-4">

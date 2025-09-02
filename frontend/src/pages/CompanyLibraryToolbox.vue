@@ -57,9 +57,9 @@
                 "
                 :disabled="!tickedTemplates.length"
                 class="del-all-btn"
-                @click="deleteTemplates"
+                @click="handleDeleteTemplatesClick"
               >
-                Delete All
+                Delete
               </button>
             </div>
           </div>
@@ -101,7 +101,7 @@
                         fill-opacity="0.5"
                       ></path>
                     </svg>
-                    <div class="template-name">
+                    <div class="template-name w-full">
                       <h5 style="color: black">{{ template.title }}</h5>
                       <span>Last Updated: {{ template.lastUpdated }}</span>
                     </div>
@@ -208,8 +208,13 @@
         </div>
         <div class="preview-sec">
           <div v-if="selectedTemplate">
-            <div class="detail-head">
-              <h2 style="color: black">{{ selectedTemplate.title }}</h2>
+            <div class="flex flex-col text-center">
+              <h2
+                class="text-ellipsis max-w-full overflow-hidden"
+                style="color: black"
+              >
+                {{ selectedTemplate.title }}
+              </h2>
               <span>Created by {{ selectedTemplate.createdBy }}</span>
               <span>{{ selectedTemplate.creationDate }}</span>
             </div>
@@ -239,8 +244,13 @@
 </template>
 
 <script>
+import { inject } from "vue";
 import apiClient from "../router/axios";
 export default {
+  setup() {
+    const showAlert = inject("showAlert");
+    return { showAlert };
+  },
   data() {
     return {
       templates: [],
@@ -283,6 +293,21 @@ export default {
       this.selectedTemplate = null;
       this.currentPage = 1;
     },
+    handleDeleteTemplatesClick() {
+      this.showAlert({
+        title: "Confirm Delete Templates",
+        description: "Are you sure you want to delete selected templates?",
+        actions: [
+          {
+            label: "Cancel",
+          },
+          {
+            label: "Yes",
+            handler: () => this.deleteTemplates(),
+          },
+        ],
+      });
+    },
     async deleteTemplates() {
       try {
         await apiClient.post("/delete-selected-cms-library", {
@@ -307,7 +332,7 @@ export default {
     },
     goToDetailPage(templateId) {
       this.$router.push({
-        name: "update-attachments",
+        name: "toolbox-talks-library-preview",
         params: { id: templateId },
       });
     },

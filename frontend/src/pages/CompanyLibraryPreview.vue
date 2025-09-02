@@ -9,13 +9,13 @@
         >
           <i class="fa-solid fa-chevron-left"></i>
         </div>
+        <a href="javascript:void(0)" class="iconBTN">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
       </div>
       <div class="details-wrapper">
         <div class="details-main-wrapper">
-          <EditableText
-            :value="talkDetails.title"
-            @submit="handleEditTitleSubmit"
-          />
+          <span class="mianHeading">{{ talkDetails.title }}</span>
 
           <span class="createdByHeading"
             >Created by {{ talkDetails.created_by_user?.name }}
@@ -23,25 +23,21 @@
           <span class="dateHeading">{{
             formatDate(talkDetails.created_at)
           }}</span>
-          <span class="assignSpan" v-if="status == 1">Assigned</span>
-          <span class="unassignSpan" v-if="status == 0">Unassigned</span>
         </div>
-
-        <EditableTextarea
-          :value="talkDetails.description"
-          @submit="handleEditDescriptionSubmit"
-        />
+        <div class="description-main-wrapper">
+          <span class="bottom-des">Description</span>
+          <span class="bottom-description overflow-auto">{{
+            talkDetails.description
+          }}</span>
+        </div>
       </div>
     </div>
     <div class="right-side-main-container">
       <div class="updates-main-container">
         <div class="headingContainer">
           <span>Updates & Attachments</span>
-          <button v-if="status == 1" class="copy-btn" @click="handleMakeACopy">
-            Make a copy
-          </button>
 
-          <div v-if="status == 0" class="optionsContainer">
+          <div class="optionsContainer">
             <button class="submitButton" @click="handleSubmit">
               <i
                 v-if="loadingAssignUsers"
@@ -56,8 +52,6 @@
                 v-model="submitType"
               >
                 <option value="3">Send</option>
-                <option value="1">Save in Library</option>
-                <option value="2">Send & Save</option>
               </select>
             </div>
           </div>
@@ -74,20 +68,10 @@
               >
             </div>
           </div>
-          <button
-            v-if="status == 1"
-            class="editButton"
-            @click="showDocumentsPopup"
-          >
+          <button class="editButton" @click="showDocumentsPopup">
             Preview
           </button>
-          <button
-            v-if="status == 0"
-            class="editButton"
-            @click="showDocumentsEditPopup"
-          >
-            Edit
-          </button>
+
           <div class="commonContainer">
             <span class="uplaodHead">Question Sheet</span>
             <span class="attactmentSpan"
@@ -95,23 +79,13 @@
             >
           </div>
           <PreviewQuestionSheet
-            v-if="status == 1"
             :questionsToAskCount="totalQuestions"
             :correctAnswersRequiredCount="correctAnswers"
             :questions="questionSheet"
           />
-          <EditQuestionSheet
-            v-if="status == 0"
-            :initialQuestionsToAskCount="totalQuestions"
-            :initialCorrectAnswersRequiredCount="correctAnswers"
-            :questions="questionSheet"
-            :handleDeleteQuestion="deleteQuestion"
-            :toolboxTalkId="this.$route.params.id"
-            :getDetailsToolboxTalk="getDetailsToolboxTalk"
-          />
         </div>
       </div>
-      <div class="attendes-main-wrapper" v-if="status == 0">
+      <div class="attendes-main-wrapper">
         <!-- <div class="row py-2 cstmFormRow border-0"> -->
         <div class="row py-2 cstmFormRow border-0">
           <div class="cstmInputBox max-w-[200px]!">
@@ -244,77 +218,12 @@
 
         <div class="line-break opacity-20"></div>
       </div>
-      <div class="tableWrapperBox sign-off-wrapper mt-8" v-if="status == 1">
-        <div class="sectionheadingbox p-2 flex gap-3">
-          <h3>Sign-Off Sheet</h3>
-          <i
-            class="fa-solid fa-arrow-up-right-from-square cursor-pointer hover:scale-105"
-            @click="handleExport"
-          ></i>
-        </div>
-        <div class="table-responsive cornerRadiusTablebox sign-off-inside">
-          <table class="table mb-0">
-            <thead class="position-sticky top-0 position-indexing">
-              <tr>
-                <th>Name</th>
-                <th width="150">Date</th>
-                <th width="150">Time</th>
-                <th width="150">Result</th>
-                <th width="150">Attempts</th>
-                <th width="120">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="signOff in signOffSheet" :key="signOff.id">
-                <td>
-                  <span>{{ signOff.name }}</span>
-                </td>
-                <td>
-                  <span>{{
-                    signOff.date
-                      ? new Date(signOff.date).toLocaleDateString("en-GB")
-                      : "N/A"
-                  }}</span>
-                </td>
-                <td>
-                  <span>{{ signOff.time || "N/A" }}</span>
-                </td>
-                <td>
-                  <span>{{ signOff.result.result }}</span>
-                  <span
-                    >&nbsp;<i class="fa fa-file-text cursor-pointer"></i
-                  ></span>
-                </td>
-                <td>
-                  <span>{{ signOff.attempt || "N/A" }}</span>
-                </td>
-                <td>
-                  <input
-                    class="form-check-input rounded-full!"
-                    style="opacity: 1"
-                    type="checkbox"
-                    :checked="signOff.status === 'Completed'"
-                    disabled
-                  />
-                </td>
-              </tr>
-              <tr v-if="!signOffSheet || signOffSheet.length === 0">
-                <td colspan="6" style="text-align: center; padding: 20px">
-                  No sign-off data available.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="my-8 flex items-center" v-if="status == 0">
+      <div class="my-8 flex items-center">
         <h5 class="text-[14px]! font-bold! m-0 w-[200px]">Due Date</h5>
         <DatePicker
           v-model="dueDate"
           fieldClass="w-48"
           disableBeforeToday="true"
-          :disabled="status == 1"
         />
       </div>
     </div>
@@ -343,17 +252,8 @@
               />
               <!-- <span class="url-span">{{ videoLink }}</span> -->
               <div class="flex gap-2">
-                <button v-if="videoLink.length && isVideoURLValid">
-                  <a :href="videoLink" target="_blank">
-                    <i class="pi pi-play-circle"></i>
-                  </a>
-                </button>
                 <button
-                  v-if="
-                    videoLink.length &&
-                    initialVideoLink !== videoLink &&
-                    isVideoURLValid
-                  "
+                  v-if="initialVideoLink !== videoLink"
                   @click="handleUpdateVideoLink"
                   class="trash-button"
                   type="button"
@@ -450,7 +350,7 @@
         </div>
         <div class="text-end end_btn">
           <button type="button" @click="closeEditPopup" class="cancel-btn">
-            Close
+            Cancel
           </button>
         </div>
       </div>
@@ -510,7 +410,7 @@
       </div>
       <div class="text-end end_btn">
         <button type="button" @click="closePopup" class="backBtnEnd">
-          Close
+          Cancel
         </button>
       </div>
     </div>
@@ -549,7 +449,6 @@ import DropdownWithSearch from "../components/DropdownWithSearch.vue";
 import { inject } from "vue";
 import EditableText from "../components/EditableText.vue";
 import EditableTextarea from "../components/EditableTextarea.vue";
-import DatePicker from "../components/DatePicker.vue";
 import moment from "moment";
 
 export default {
@@ -559,10 +458,7 @@ export default {
   },
   data() {
     return {
-      timeout: null, // timeout for debouncing the video url validation
-      loadingValidateVideoURL: false, // loading state for validate video URL logic
-      videoType: "video/mp4", // default video type
-      isVideoURLValid: null, // flag to check if the video URL is valid
+      dueDate: null, // state to store due date
 
       isAlertVisible: false,
 
@@ -578,8 +474,6 @@ export default {
       submitType: "3", // submit type, i.e., 1 for Save in Library, 2 for Send & Save, 3 for Send
       newQuestions: [], // state to store added questions
       questionSheet: [], // state to store initial questions data from API
-
-      dueDate: null, // state to store due date
       dropDownOpenDepartment: false,
       dropDownOpenRole: false,
       dropDownOpenUsers: false,
@@ -630,74 +524,8 @@ export default {
         this.selectedUsers = [];
       },
     },
-    videoLink: {
-      handler(val) {
-        clearTimeout(this.timeout);
-        this.timeout = setTimeout(() => {
-          this.validateVideoURL(val);
-        }, 1000);
-      },
-    },
   },
   methods: {
-    async validateVideoURL(videoUrl) {
-      try {
-        this.isVideoURLValid = null;
-        if (!videoUrl.length) return;
-
-        this.loadingValidateVideoURL = true;
-
-        const urlRegex =
-          /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
-        const youtubeRegex =
-          /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))((?:\w|-){11})(?:\S+)?$/;
-
-        if (!urlRegex.test(videoUrl)) throw new Error("Video URL is invalid");
-
-        const isYoutubeVideo = youtubeRegex.test(videoUrl);
-
-        if (isYoutubeVideo) {
-          this.videoType = "video/youtube";
-          this.isVideoURLValid = true;
-        } else {
-          const res = await axios(videoUrl);
-          if (
-            !res.headers["content-type"] ||
-            !res.headers["content-type"].startsWith("video/")
-          )
-            throw new Error("Content type is not video");
-
-          this.videoType = res.headers["content-type"];
-          this.isVideoURLValid = true;
-        }
-        // setTimeout(() => {
-        //   this.isPreviewVideoVisible = true;
-        // }, 1000);
-      } catch (err) {
-        this.isVideoURLValid = false;
-      }
-      this.loadingValidateVideoURL = false;
-    },
-    async handleExport() {
-      try {
-        window.open(
-          `${import.meta.env.VITE_APP_BASE_URL}/export_toolbox_csv_web/${
-            this.$route.params.id
-          }`
-        );
-      } catch (err) {}
-    },
-    async handleEditDescriptionSubmit(description) {
-      try {
-        await apiClient.post("/update-content-toolboxtalk", {
-          description,
-          toolbox_talk_id: this.$route.params.id,
-        });
-        this.getDetailsToolboxTalk();
-      } catch (err) {
-        console.log(err);
-      }
-    },
     handleMakeACopy() {
       this.showAlert({
         title: "Confirm Make a Copy",
@@ -724,17 +552,6 @@ export default {
         console.log(err);
       }
     },
-    async handleEditTitleSubmit(title) {
-      try {
-        await apiClient.post("/update-content-toolboxtalk", {
-          title,
-          toolbox_talk_id: this.$route.params.id,
-        });
-        this.getDetailsToolboxTalk();
-      } catch (err) {
-        console.log(err);
-      }
-    },
     validationCheck() {
       if (
         this.talkDetails.video_url.length === 0 &&
@@ -747,6 +564,7 @@ export default {
         });
         return false;
       }
+
       if (this.submitType === "2" || this.submitType === "3") {
         if (!this.dueDate || !moment(this.dueDate).isValid()) {
           this.showAlert({
@@ -1280,7 +1098,6 @@ export default {
   padding-right: 20px;
 
   display: flex;
-  overflow: auto;
   flex-direction: column;
 }
 
@@ -1533,6 +1350,9 @@ export default {
   flex-direction: column;
   padding-top: 3%;
   gap: 13px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 413px);
 }
 
 .popup-overlay {

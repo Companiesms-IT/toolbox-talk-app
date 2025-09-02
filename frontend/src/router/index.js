@@ -1,19 +1,18 @@
 import { createRouter, createWebHistory } from "vue-router";
 import DefaultLayout from "../layouts/DefaultLayout.vue";
-import CmsDashboard from "../pages/CmsDashboard.vue";
 import CreateNewTalk from "../pages/CreateNewTalk.vue";
 import CreatedByMeTalks from "../pages/CreatedByMeTalks.vue";
 import ListOfToolboxTalks from "../pages/ListOfToolboxTalks.vue";
 import EditToolboxTalk from "../pages/EditToolboxTalk.vue";
 import ToolboxDetailsPage from "../pages/ToolboxDetailsPage.vue";
 import AssignToMeTalks from "../pages/AssignToMeTalks.vue";
-import UpdatesAndAttachments from "../pages/UpdatesAndAttachments.vue";
 import CMSPage from "../pages/CMSPage.vue";
 import CMSLibraryPage from "../pages/CMSLibraryPage.vue";
 import AssignedToolbox from "../pages/AssignedToolbox.vue";
 import CompanyLibraryToolbox from "../pages/CompanyLibraryToolbox.vue";
 import AssignedToMeDetailPage from "../pages/AssignedToMeDetailPage.vue";
 import AttemptQuestions from "../pages/AttemptQuestions.vue";
+import CompanyLibraryPreview from "../pages/CompanyLibraryPreview.vue";
 
 const routes = [
   {
@@ -82,6 +81,11 @@ const routes = [
         path: "toolbox-library",
         name: "toolbox-talks-library",
         component: CompanyLibraryToolbox,
+      },
+      {
+        path: "toolbox-library/:id",
+        name: "toolbox-talks-library-preview",
+        component: CompanyLibraryPreview,
       },
       {
         path: "cms-library",

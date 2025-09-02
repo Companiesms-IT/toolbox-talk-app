@@ -22,7 +22,9 @@ const questionsToAskCount = ref();
 const correctAnswersRequiredCount = ref();
 const questionsDiv = useTemplateRef("questionsDiv");
 
-const newQuestions = reactive([
+const isGeneratingQuestions = ref(false);
+
+let newQuestions = reactive([
   initialQuestions.length > 0
     ? initialQuestions
     : {
@@ -94,6 +96,15 @@ const validationCheck = () => {
     return false;
   }
 
+  if (filledQuestions.value.length > 10) {
+    showAlert({
+      title: "Error",
+      description: "Maximum 10 questions are allowed",
+      type: "error",
+    });
+    return false;
+  }
+
   if (
     filledQuestions.value.some(
       (ques) => ques.options[0].length === 0 || ques.options[1].length === 0
@@ -101,7 +112,7 @@ const validationCheck = () => {
   ) {
     showAlert({
       title: "Error",
-      description: "Please fill atleast two options for each question",
+      description: "Please fill options A & B for each question",
       type: "error",
     });
     return false;
@@ -124,7 +135,10 @@ const validationCheck = () => {
 const handleCreate = () => {
   if (!validationCheck()) return;
   handleSubmit(
-    filledQuestions.value,
+    filledQuestions.value.map((ques) => ({
+      ...ques,
+      options: ques.options.filter((option) => option.length > 0),
+    })),
     questionsToAskCount.value,
     correctAnswersRequiredCount.value
   );
@@ -132,9 +146,12 @@ const handleCreate = () => {
 };
 
 watch(newQuestions, (val) => {
-  filledQuestions.value = val.filter(
-    (ques) => ques.text && ques.text.length > 0
-  );
+  const temp = [];
+  for (const ques of val) {
+    if (!ques.text || ques.text.length === 0) continue;
+    temp.push(ques);
+  }
+  filledQuestions.value = temp;
 });
 </script>
 
@@ -153,6 +170,13 @@ watch(newQuestions, (val) => {
       <DialogContent
         class="z-40 font-sans fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg w-[800px] flex flex-col gap-3"
       >
+        <div
+          v-if="isGeneratingQuestions"
+          class="bg-black/50 z-50 text-white absolute inset-0 flex justify-center gap-4 items-center mb-3 w-full h-full"
+        >
+          <i class="pi pi-spinner-dotted animate-spin text-3xl"></i>
+          <span>Wait while we generate your question sheet...</span>
+        </div>
         <div class="rounded-full py-2 px-3 bg-[#afb0f5] font-bold">
           {{ initialQuestions.length ? "Update" : "Create" }} Question Sheet
         </div>
@@ -223,6 +247,7 @@ watch(newQuestions, (val) => {
                     :value="optionIdx + 1"
                     class="w-[18px] h-[18px] border rounded-full!"
                     :id="String.fromCharCode(65 + optionIdx)"
+                    :disabled="question.options[optionIdx].length === 0"
                   >
                     <RadioGroupIndicator
                       class="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-[11px] after:h-[11px] after:rounded-[50%] after:bg-[#6366f1]"

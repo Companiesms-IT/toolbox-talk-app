@@ -95,9 +95,6 @@ const handleSubmit = async () => {
               });
             },
           },
-          {
-            label: "Try again",
-          },
         ],
       });
   } catch (err) {
@@ -146,6 +143,7 @@ onMounted(() => {
           v-for="(option, optionIdx) in question.options"
           class="flex gap-[8px] items-center"
         >
+          {{ String.fromCharCode(65 + optionIdx) }}
           <RadioGroupItem
             :value="option.id"
             class="w-[18px] h-[18px] border rounded-full!"

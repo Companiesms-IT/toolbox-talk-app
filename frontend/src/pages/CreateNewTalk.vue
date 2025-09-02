@@ -22,6 +22,7 @@
           <div class="cstmInputBox">
             <input
               v-model="talkTitle"
+              maxlength="100"
               required
               type="text"
               class="form-control"
@@ -666,16 +667,6 @@ export default {
       this.dropDownOpenUsers = false;
     },
 
-    toggleUsersSelection(user) {
-      if (this.isSelectedUsers(user)) {
-        this.selectedUsers = this.selectedUsers.filter(
-          (curr) => curr.id !== user.id
-        );
-      } else {
-        this.selectedUsers.push(user);
-      }
-    },
-
     isSelectedUsers(user) {
       return !!this.selectedUsers.find((curr) => curr.id === user.id);
     },
@@ -908,6 +899,7 @@ export default {
         this.users = data.entities.map((user) => ({
           id: user.properties.id,
           name: user.properties.name,
+          email: user.properties.email,
         }));
       } catch (err) {}
     },
@@ -939,6 +931,7 @@ export default {
         data?.entities?.map((user) => ({
           id: user.properties.id,
           name: user.properties.name,
+          email: user.properties.email,
         })) || []
       );
     },
@@ -968,6 +961,14 @@ export default {
         this.showAlert({
           title: "Validation Error",
           description: "Please enter Talk Title.",
+          type: "error",
+        });
+        return false;
+      }
+      if (this.talkTitle.length > 100) {
+        this.showAlert({
+          title: "Validation Error",
+          description: "Talk Title must have maximum 100 characters.",
           type: "error",
         });
         return false;
@@ -1018,6 +1019,7 @@ export default {
             uniqueUsers.set(user.id, {
               select_user_id: user.id,
               user_name: user.name,
+              user_email: user.email,
             });
           });
         else {
@@ -1027,12 +1029,14 @@ export default {
             uniqueUsers.set(user.id, {
               select_user_id: user.id,
               user_name: user.name,
+              user_email: user.email,
             })
           );
           users.forEach((user) =>
             uniqueUsers.set(user.id, {
               select_user_id: user.id,
               user_name: user.name,
+              user_email: user.email,
             })
           );
         }
@@ -1056,7 +1060,10 @@ export default {
         //   title: "Toolbox Talk Created",
         //   text: "Your toolbox talk has been successfully created!",
         // });
-        this.submitPopUp = true;
+        this.showAlert({
+          title: "Toolbox Talk Created",
+          description: "Your toolbox talk has been successfully created!",
+        });
         setTimeout(() => {
           this.$router.push({ name: "created-by-me-talks" });
         }, 2000);
