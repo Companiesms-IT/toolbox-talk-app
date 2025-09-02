@@ -10,7 +10,7 @@ import {
   RadioGroupItem,
   RadioGroupRoot,
 } from "radix-vue";
-import Dropdown from "../dropdown.vue";
+import Dropdown from "../Dropdown.vue";
 const props = defineProps([
   "questionsToAskCount",
   "correctAnswersRequiredCount",
