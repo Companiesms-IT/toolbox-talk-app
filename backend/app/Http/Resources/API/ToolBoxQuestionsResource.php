@@ -15,10 +15,10 @@ class ToolBoxQuestionsResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'               => $this['id'],
-            'name'             => $this['name'],
-            'options'          => ToolBoxOptionsResource::collection($this->options),
-            'correct_answer'   => ToolBoxOptionsResource::collection($this->correctAnswer),
+            'id'               => isset($this['id']) ? $this['id'] : null,
+            'name'             => isset($this['name']) ? $this['name'] : null,
+            'options'          => isset($this->options) ? ToolBoxOptionsResource::collection($this->options) : [],
+            'correct_answer'   => isset($this->correctAnswer) ? ToolBoxOptionsResource::collection($this->correctAnswer) : [],
         ];
     }
 }

@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Kolkata',
 
     /*
     |--------------------------------------------------------------------------
@@ -122,5 +122,10 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    
+    
+    'VITE_FRONT_URL'          => env('VITE_FRONT_URL', 'http://locahost'),
+    'VITE_GEMINI_API_KEY'     => env('VITE_GEMINI_API_KEY', ''),
+    'VITE_APP_CMS_BASE_URL'   => env('VITE_APP_CMS_BASE_URL', ''),
 
 ];

@@ -24,7 +24,9 @@ class UpdateQuestionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-             'toolbox_talk_id'     =>  ['required', new ExistsOrSoftDeletedRequest(ToolboxTalk::class)],
+            'toolbox_talk_id'   => ['required', 'integer', new ExistsOrSoftDeletedRequest(ToolboxTalk::class)],
+            // 'video_id'          => 'required_without:file_id|exists:resource_video_links,id',
+            // 'file_id'           => 'required_without:video_id|exists:media_files,id',
         ];
     }
 }

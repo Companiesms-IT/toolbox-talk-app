@@ -21,15 +21,14 @@ class CreateToolboxTalksTable extends Migration
             $table->integer('number_of_correct_answer_to_pass')->nullable();
             $table->longText('file')->nullable();
             $table->mediumText('description')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();    
-            $table->enum('is_library',['1','2','3'])->default(null);
-            $table->date('due_date')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->enum('is_library', ['1', '2', '3'])->default(null)->nullable();
+            $table->string('due_date')->nullable();
+            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->softDeletes();
-            $table->enum('status', ['0', '1'])->default(null);
-            $table->enum('is_created',['1','2'])->default(2);
+            $table->enum('status', ['0', '1', '2'])->default(null)->comment('1:Assigned; 0:Unassigned; 2:Ended');
+            $table->enum('is_created', ['1', '2'])->default(2);
             $table->timestamps();
-            
         });
     }
 

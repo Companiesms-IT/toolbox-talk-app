@@ -30,7 +30,7 @@ class CreateToolboxTalkRequest extends FormRequest
     //         // 'number_of_correct_answer_to_pass'   => 'required'
     //     ];
     // }
-
+    
     /**
      * Get the validation rules that apply to the request.
      *
@@ -39,7 +39,7 @@ class CreateToolboxTalkRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:toolbox_talks,title,NULL,id',
         ];
         // if ($this->isLibrary == 2 || $this->isLibrary == 3) {
         //     $rules['selectAll']      = 'boolean|nullable';
@@ -58,7 +58,7 @@ class CreateToolboxTalkRequest extends FormRequest
     protected function withValidator($validator)
     {
         // dd($this->selectAll, $this->selectDept, $this->selectRole, $this->selectUser);
-        $validator->after(function ($validator) {
+         $validator->after(function ($validator) {
             if ($this->isLibrary == 2 || $this->isLibrary == 3) {
                 if (empty($this->selectAll) && empty($this->input('selectDept', [])) && empty($this->input('selectRole', [])) && empty($this->input('selectUser', []))) {
                     // $validator->errors()->add('minimum_select_one', 'You need to choose at least one role, department or user.');
